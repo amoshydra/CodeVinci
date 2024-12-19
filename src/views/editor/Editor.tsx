@@ -1,4 +1,5 @@
 import { InputHTMLAttributes } from "react";
+import { withCn } from "../../utils/tailwind";
 
 export interface EditorProps extends InputHTMLAttributes<HTMLTextAreaElement> {
   onValueChange?: (value: string) => void;
@@ -9,5 +10,5 @@ export const Editor = ({ onValueChange, ...props }: EditorProps) => {
     onValueChange?.(e.target.value);
     props.onChange?.(e);
   };
-  return <textarea {...props} onChange={onChange} />;
+  return <textarea {...withCn(props, "resize-none")} onChange={onChange} />;
 };
