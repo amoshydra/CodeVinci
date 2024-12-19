@@ -10,10 +10,13 @@ const getHashAsParams = (): URLSearchParams => {
   return new URLSearchParams(input);
 };
 
-const getValueFromUrl = async (property: string) => {
+const getValueFromUrl = async (property: string, defaultValue: string) => {
   const params = getHashAsParams();
   const value = params.get(property);
-  return value ? await decompress(base64ToArrayBuffer(value)) : "";
+
+  if (value === null) return defaultValue;
+
+  return decompress(base64ToArrayBuffer(value));
 };
 
 const setValueToUrl = async (property: string, value: string) => {
@@ -35,11 +38,11 @@ const setValueToUrl = async (property: string, value: string) => {
 
 const QUERY_PROPERTY = "v";
 
-export const useCodeStorage = () => {
+export const useCodeStorage = (defaultValue: string) => {
   const [v, setV] = useState("");
 
   useEffect(() => {
-    getValueFromUrl(QUERY_PROPERTY)
+    getValueFromUrl(QUERY_PROPERTY, defaultValue)
       .then((value) => {
         setV(value);
       })

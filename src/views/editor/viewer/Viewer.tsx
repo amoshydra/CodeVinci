@@ -1,6 +1,28 @@
 import { HTMLAttributes } from "react";
 import { withCn } from "../../../utils/tailwind";
 
-export const Viewer = (props: HTMLAttributes<HTMLElement>) => {
-  return <pre {...withCn(props, "h-full w-full overflow-auto")} />;
+export interface ViewerProps extends HTMLAttributes<HTMLElement> {
+  script: string;
+}
+
+export const Viewer = (props: ViewerProps) => {
+  const srcDoc = getSrcDoc(props.script);
+
+  return (
+    <iframe {...withCn(props, "h-full w-full overflow-auto")} srcDoc={srcDoc} />
+  );
+};
+
+const getSrcDoc = (script: string) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Preview</title>
+      </head>
+      <body>
+        <script>${script}</script>
+      </body>
+    </html>
+  `;
 };

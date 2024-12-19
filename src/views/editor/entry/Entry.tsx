@@ -1,4 +1,5 @@
-import { HTMLAttributes } from "react";
+import { HTMLAttributes, useDeferredValue } from "react";
+import { useBuilder } from "../../../services/builder";
 import { useCodeStorage } from "../../../services/useCodeStorage";
 import { withCn } from "../../../utils/tailwind";
 import { Editor } from "../Editor";
@@ -7,7 +8,11 @@ import { Viewer } from "../viewer/Viewer";
 export type EntryProps = HTMLAttributes<HTMLElement>;
 
 export const Entry = (props: EntryProps) => {
-  const [code, setCode] = useCodeStorage();
+  const [code, setCode] = useCodeStorage(initialCode);
+
+  const deferredCode = useDeferredValue(code);
+
+  const [, , result] = useBuilder(deferredCode);
 
   return (
     <div {...withCn(props, "h-full flex flex-col")}>
@@ -23,7 +28,7 @@ export const Entry = (props: EntryProps) => {
           className="resize-x overflow-auto"
         />
 
-        <Viewer className="w-full h-full" children={code} />
+        <Viewer className="w-full h-full" script={result} />
         <Editor
           className="w-full h-full"
           value={code}
@@ -43,3 +48,5 @@ export const Entry = (props: EntryProps) => {
 const Placeholder = (props: HTMLAttributes<HTMLDivElement>) => {
   return <div {...withCn(props, "border-2 p-4")} />;
 };
+
+const initialCode = `document.body.insertAdjacentHTML("beforeend", "<h1>Hello, World!</h1>");`;
