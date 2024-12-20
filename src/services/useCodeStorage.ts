@@ -24,16 +24,14 @@ const setValueToUrl = async (property: string, value: string) => {
   const base64String = arrayBufferToBase64(compressed);
   // Prepare params
   const params = getHashAsParams();
-  params.set("", "");
-  params.delete(property); // we will maintain the hash manually
-  const hashPart = `&${property}=${decodeURI(base64String)}`;
+  params.set(property, base64String);
 
   // Construct URL
   const url = new URL(window.location.href);
   url.hash = params.toString();
 
   // Update URL
-  history.replaceState(null, "", url + hashPart);
+  history.replaceState(null, "", url);
 };
 
 const QUERY_PROPERTY = "v";
