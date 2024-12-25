@@ -1,5 +1,5 @@
 import { HTMLAttributes } from "react";
-import { withCn } from "../../../utils/tailwind";
+import { withCn } from "../../utils/tailwind";
 
 export interface ViewerProps extends HTMLAttributes<HTMLElement> {
   script: string;

@@ -1,9 +1,9 @@
 import { HTMLAttributes, useDeferredValue } from "react";
-import { useBuilder } from "../../../services/builder";
-import { useCodeStorage } from "../../../services/useCodeStorage";
-import { withCn } from "../../../utils/tailwind";
-import { Editor } from "../Editor";
+import { Editor } from "../editor/Editor";
 import { Viewer } from "../viewer/Viewer";
+import { useBuilder } from "./../../services/builder";
+import { useCodeStorage } from "./../../services/useCodeStorage";
+import { withCn } from "./../../utils/tailwind";
 
 export type EntryProps = HTMLAttributes<HTMLElement>;
 

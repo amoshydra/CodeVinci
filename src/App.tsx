@@ -1,5 +1,5 @@
 import { useEsbuild } from "./services/esbuild";
-import { Entry } from "./views/editor/entry/Entry";
+import { Entry } from "./views/entry/Entry";
 
 function App() {
   const [, isLoading] = useEsbuild();
