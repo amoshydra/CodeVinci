@@ -1,6 +1,7 @@
 export interface DisclaimerProps {
   code: string;
-  onAccepted: () => void;
+  onAcceptRun: () => void;
+  onAcceptEdit: () => void;
 }
 
 export const Disclaimer = (props: DisclaimerProps) => {
@@ -20,10 +21,16 @@ export const Disclaimer = (props: DisclaimerProps) => {
 
       <pre className="p-6 border-2 overflow-auto">{props.code}</pre>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-4">
+        <button
+          className="bg-slate-100 hover:bg-slate-300 text-slate-700 border-1 font-bold py-2 px-4 rounded"
+          onClick={() => props.onAcceptEdit()}
+        >
+          Comment before run
+        </button>
         <button
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={() => props.onAccepted()}
+          onClick={() => props.onAcceptRun()}
         >
           Run code
         </button>

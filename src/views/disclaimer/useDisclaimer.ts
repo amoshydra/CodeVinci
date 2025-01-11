@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toggleComment } from "./toggleComment.util";
 
 const STORAGE_KEY_ACCEPTED_DISCLAIMER = "accepted-disclaimer";
 const initialIsDisclaimerAccepted =
