@@ -10,5 +10,10 @@ export const Editor = ({ onValueChange, ...props }: EditorProps) => {
     onValueChange?.(e.target.value);
     props.onChange?.(e);
   };
-  return <textarea {...withCn(props, "resize-none")} onChange={onChange} />;
+  return (
+    <textarea
+      {...withCn(props, "resize-none font-mono whitespace-pre p-2")}
+      onChange={onChange}
+    />
+  );
 };
