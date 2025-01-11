@@ -2,14 +2,14 @@ import { HTMLAttributes, useDeferredValue } from "react";
 import { Editor } from "../editor/Editor";
 import { Viewer } from "../viewer/Viewer";
 import { useBuilder } from "./../../services/builder";
-import { useCodeStorage } from "./../../services/useCodeStorage";
 import { withCn } from "./../../utils/tailwind";
 
-export type EntryProps = HTMLAttributes<HTMLElement>;
+export interface EntryProps extends HTMLAttributes<HTMLElement> {
+  code: string;
+  onCodeChange: (code: string) => void;
+}
 
-export const Entry = (props: EntryProps) => {
-  const [code, setCode] = useCodeStorage(initialCode);
-
+export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
   const deferredCode = useDeferredValue(code);
 
   const [, , result] = useBuilder(deferredCode);
@@ -33,7 +33,7 @@ export const Entry = (props: EntryProps) => {
           className="w-full h-full"
           value={code}
           onValueChange={(code) => {
-            setCode(code);
+            onCodeChange(code);
           }}
         />
       </div>
@@ -49,4 +49,3 @@ const Placeholder = (props: HTMLAttributes<HTMLDivElement>) => {
   return <div {...withCn(props, "border-2 p-4")} />;
 };
 
-const initialCode = `document.body.insertAdjacentHTML("beforeend", "<h1>Hello, World!</h1>");`;

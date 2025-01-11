@@ -9,7 +9,11 @@ export const Viewer = (props: ViewerProps) => {
   const srcDoc = getSrcDoc(props.script);
 
   return (
-    <iframe {...withCn(props, "h-full w-full overflow-auto")} srcDoc={srcDoc} />
+    <iframe
+      {...withCn(props, "h-full w-full overflow-auto")}
+      sandbox="allow-scripts"
+      srcDoc={srcDoc}
+    />
   );
 };
 
