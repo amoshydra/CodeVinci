@@ -36,9 +36,7 @@ export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
         <Editor
           className="w-full h-full"
           value={code}
-          onValueChange={(code) => {
-            onCodeChange(code);
-          }}
+          onValueChange={onCodeChange}
           data-grid-area="editor"
         />
       </div>
