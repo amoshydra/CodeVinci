@@ -38,4 +38,5 @@ const initialCode = `document.body.insertAdjacentHTML("beforeend", \`
   <div>
     
   </div>
-\`);`;
+\`);
+`;
