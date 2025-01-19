@@ -1,25 +1,24 @@
-import { javascript } from '@codemirror/lang-javascript';
-import CodeMirror from '@uiw/react-codemirror';
-import { HTMLAttributes } from 'react';
+import { lazy, Suspense } from 'react';
 import { withCn } from "../../utils/tailwind";
+import { EditorProps } from './interface';
 
-export interface EditorProps extends HTMLAttributes<HTMLDivElement> {
-  onValueChange: (value: string) => void;
-  value: string;
-}
+const LaziedCodeMirror = lazy(async () => ({ default: (await import("./Editor.CodeMirror")).CodeMirrorEditor }));
+const LaziedMonaco = lazy(async () => ({ default: (await import("./Editor.Monaco")).MonacoEditor }));
+const PlaceholderEditor = (p: { value: string }) => <textarea className='h-full w-full' readOnly value={"// Loading editor...\n\n" + p.value} />
+
+const EditorToRender = true ? LaziedMonaco : LaziedCodeMirror;
 
 export const Editor = ({ value, onValueChange, ...props }: EditorProps) => {
   return (
     <div {...withCn(props, "overflow-y-hidden")}>
-      <CodeMirror
-        height="100%"
-        className='h-full'
-        value={value}
-        onChange={onValueChange}
-        extensions={extensions}
-      />
+      <Suspense
+        fallback={<PlaceholderEditor value={value} />}
+      >
+        <EditorToRender
+          value={value}
+          onValueChange={onValueChange}
+        />
+      </Suspense>
     </div>
   );
 };
-
-const extensions = [javascript({ jsx: true })];

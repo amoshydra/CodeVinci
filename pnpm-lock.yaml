@@ -17,9 +17,15 @@ importers:
       '@uiw/react-codemirror':
         specifier: ^4.23.7
         version: 4.23.7(@babel/runtime@7.26.0)(@codemirror/autocomplete@6.18.4)(@codemirror/language@6.10.8)(@codemirror/lint@6.8.4)(@codemirror/search@6.5.8)(@codemirror/state@6.5.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.36.2)(codemirror@6.0.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@uiw/react-monacoeditor':
+        specifier: ^3.6.0
+        version: 3.6.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       esbuild-wasm:
         specifier: ^0.24.0
-        version: 0.24.0
+        version: 0.24.0(patch_hash=lgg2b47evlxg37rx7yatwky3cu)
+      monaco-editor:
+        specifier: ^0.52.2
+        version: 0.52.2
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -69,6 +75,9 @@ importers:
       vite:
         specifier: ^6.0.3
         version: 6.0.4(@types/node@22.10.2)(jiti@2.4.2)(lightningcss@1.28.2)
+      vite-plugin-monaco-editor-esm:
+        specifier: ^2.0.1
+        version: 2.0.1(monaco-editor@0.52.2)
 
 packages:
 
@@ -703,6 +712,12 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
+  '@uiw/react-monacoeditor@3.6.0':
+    resolution: {integrity: sha512-TByRDQvJLIzdyFhpkRdWz3g05fydBa73iTDKyHJ7W3Ic2fV+wEO/DX9HKOGk6f3r/hTdGOLDd4iytr8W7PFqmA==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
   '@vitejs/plugin-react@4.3.4':
     resolution: {integrity: sha512-SCCPBJtYLdE8PX/7ZQAs1QAZ8Jqwih+0VBLum1EGqmCCQal+MIUqLCzj3ZUy8ufbC0cAM4LRlSTm7IQJwWT4ug==}
     engines: {node: ^14.18.0 || >=16.0.0}
@@ -1110,6 +1125,12 @@ packages:
     resolution: {integrity: sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==}
     engines: {node: '>=16 || 14 >=14.17'}
 
+  monaco-editor@0.44.0:
+    resolution: {integrity: sha512-5SmjNStN6bSuSE5WPT2ZV+iYn1/yI9sd4Igtk23ChvqB7kDk9lZbB9F5frsuvpB+2njdIeGGFf2G4gbE6rCC9Q==}
+
+  monaco-editor@0.52.2:
+    resolution: {integrity: sha512-GEQWEZmfkOGLdd3XK8ryrfWz3AIP8YymVXiPHEdewrUq7mh0qrKrfHLNCXcbB6sTnMLnOZ3ztSiKcciFUkIJwQ==}
+
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
@@ -1284,6 +1305,11 @@ packages:
 
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
+
+  vite-plugin-monaco-editor-esm@2.0.1:
+    resolution: {integrity: sha512-kyqqParcBYLqu/dxK/+z+mDdnGSeTtSssd9jkYp03Vr090pWhjoX+yzzhEWRWtACxod2O6FcUx2vVPcexBfQXg==}
+    peerDependencies:
+      monaco-editor: '>=0.33.0'
 
   vite@6.0.4:
     resolution: {integrity: sha512-zwlH6ar+6o6b4Wp+ydhtIKLrGM/LoqZzcdVmkGAFun0KHTzIzjh+h0kungEx7KJg/PYnC80I4TII9WkjciSR6Q==}
@@ -1962,6 +1988,13 @@ snapshots:
       - '@codemirror/lint'
       - '@codemirror/search'
 
+  '@uiw/react-monacoeditor@3.6.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 7.26.0
+      monaco-editor: 0.44.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   '@vitejs/plugin-react@4.3.4(vite@6.0.4(@types/node@22.10.2)(jiti@2.4.2)(lightningcss@1.28.2))':
     dependencies:
       '@babel/core': 7.26.0
@@ -2068,7 +2101,7 @@ snapshots:
       graceful-fs: 4.2.11
       tapable: 2.2.1
 
-  esbuild-wasm@0.24.0: {}
+  esbuild-wasm@0.24.0(patch_hash=lgg2b47evlxg37rx7yatwky3cu): {}
 
   esbuild@0.24.0:
     optionalDependencies:
@@ -2360,6 +2393,10 @@ snapshots:
     dependencies:
       brace-expansion: 2.0.1
 
+  monaco-editor@0.44.0: {}
+
+  monaco-editor@0.52.2: {}
+
   ms@2.1.3: {}
 
   nanoid@3.3.8: {}
@@ -2521,6 +2558,10 @@ snapshots:
   uri-js@4.4.1:
     dependencies:
       punycode: 2.3.1
+
+  vite-plugin-monaco-editor-esm@2.0.1(monaco-editor@0.52.2):
+    dependencies:
+      monaco-editor: 0.52.2
 
   vite@6.0.4(@types/node@22.10.2)(jiti@2.4.2)(lightningcss@1.28.2):
     dependencies:

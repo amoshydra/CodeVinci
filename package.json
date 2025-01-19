@@ -13,7 +13,9 @@
     "@codemirror/lang-javascript": "^6.2.2",
     "@tailwindcss/vite": "4.0.0-beta.8",
     "@uiw/react-codemirror": "^4.23.7",
+    "@uiw/react-monacoeditor": "^3.6.0",
     "esbuild-wasm": "^0.24.0",
+    "monaco-editor": "^0.52.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.5",
@@ -31,6 +33,7 @@
     "globals": "^15.13.0",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.1",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "vite-plugin-monaco-editor-esm": "^2.0.1"
   }
 }
