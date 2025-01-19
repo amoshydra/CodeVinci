@@ -4,8 +4,10 @@ import { PlaceholderEditor } from './Editor.Placeholder';
 import { EditorProps } from './interface';
 
 const editorPreference = ((): "monaco" | "codemirror" => {
+  const userAgentPreference = matchMedia('(pointer: fine)').matches ? "monaco" : "codemirror";
+
   const params = new URLSearchParams(location.search);
-  const editorValue = params.get("editor") ?? "monaco";
+  const editorValue = params.get("editor") ?? userAgentPreference;
   return editorValue === "codemirror" ? "codemirror" : "monaco";
 })();
 
