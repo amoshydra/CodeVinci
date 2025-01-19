@@ -17,24 +17,29 @@ export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
   return (
     <div {...withCn(props, "h-full flex flex-col")}>
       <Placeholder data-placeholder="top-toolbar" />
-      <div
-        {...withCn(props, "grid min-h-0 flex-1")}
-        style={{
-          gridTemplateColumns: "min-content 1fr 1fr",
-        }}
-      >
+      <div className="entry-content-grid flex-1">
         <Placeholder
           data-placeholder="sidebar"
+          data-grid-area="sidebar"
           className="resize-x overflow-auto"
         />
-
-        <Viewer className="w-full h-full" script={result} />
+        <Viewer
+          className="w-full h-full"
+          script={result}
+          data-grid-area="viewer"
+        />
+        <div
+          style={{ paddingTop: 1, paddingLeft: 1 }}
+          className="w-full h-full bg-black"
+          data-grid-area="divider"
+        />
         <Editor
           className="w-full h-full"
           value={code}
           onValueChange={(code) => {
             onCodeChange(code);
           }}
+          data-grid-area="editor"
         />
       </div>
       <Placeholder

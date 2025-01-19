@@ -5,3 +5,36 @@ body,
 body > * {
     height: 100%;
 }
+
+.entry-content-grid {
+    display: grid;
+    min-height: 0;
+    grid-template-rows: 1fr min-content 1fr;
+    grid-template-columns: min-content 1fr min-content 1fr;
+    grid-template-areas:
+        "sidebar editor editor editor"
+        "sidebar divider divider divider"
+        "sidebar viewer viewer viewer"
+    ;
+
+    @media screen and (min-width: 1080px) {
+        grid-template-areas:
+            "sidebar viewer divider editor"
+            "sidebar viewer divider  editor"
+            "sidebar viewer divider  editor"
+        ;
+    }
+
+    > *[data-grid-area="sidebar"] {
+        grid-area: sidebar;
+    }
+    > *[data-grid-area="viewer"] {
+        grid-area: viewer;
+    }
+    > *[data-grid-area="editor"] {
+        grid-area: editor;
+    }
+    > *[data-grid-area="divider"] {
+        grid-area: divider;
+    }
+}
