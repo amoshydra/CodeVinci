@@ -23,9 +23,9 @@ const getSrcDoc = (script: string) => {
     <html>
       <head>
         <title>Preview</title>
+        <script type="module">${script}</script>
       </head>
       <body>
-        <script>${script}</script>
       </body>
     </html>
   `;
