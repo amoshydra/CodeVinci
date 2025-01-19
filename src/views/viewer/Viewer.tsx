@@ -1,15 +1,18 @@
+import { serialize } from "@ungap/structured-clone";
 import { HTMLAttributes, memo } from "react";
 import { useBuilder, type UseBuilderEsbuildOptions } from "../../services/builder";
 import { useEsbuild } from "../../services/esbuild";
 import { withCn } from "../../utils/tailwind";
 import { ViewerIframe } from "./ViewerIframe";
+import { OnFrameMessage } from "./interface";
 
 export interface ViewerProps extends HTMLAttributes<HTMLElement> {
   code: string;
   esbuildOptions: UseBuilderEsbuildOptions,
+  onFrameMessage: OnFrameMessage;
 }
 
-export const Viewer = memo(({ code, esbuildOptions, ...props }: ViewerProps) => {
+export const Viewer = memo(({ code, esbuildOptions, onFrameMessage, ...props }: ViewerProps) => {
   const [ , isLoading, error] = useEsbuild();
 
   if (error) {
@@ -19,15 +22,24 @@ export const Viewer = memo(({ code, esbuildOptions, ...props }: ViewerProps) => 
     return <ViewerLoadingView {...props} />
   }
 
-  return <ViewerBuilder code={code} esbuildOptions={esbuildOptions} {...props} />
+  return <ViewerBuilder code={code} esbuildOptions={esbuildOptions} onFrameMessage={onFrameMessage} {...props} />
 });
 
-const ViewerBuilder = memo(({ code, esbuildOptions, ...props }: ViewerProps) => {
-  const [, , result] = useBuilder(code, esbuildOptions);
+const ViewerBuilder = memo(({ code, esbuildOptions, onFrameMessage, ...props }: ViewerProps) => {
+  const [error, , result] = useBuilder(code, esbuildOptions);
+
+  if (error) {
+    onFrameMessage({
+      method: "build.error",
+      args: serialize([error]),
+    });
+    return <ViewerErrorView title={error.message} error={error} {...props} />;
+  }
 
   return (
     <ViewerIframe
       {...withCn(props, "h-full w-full overflow-auto")}
+      onFrameMessage={onFrameMessage}
       script={result}
     />
   );

@@ -1,6 +1,8 @@
-import { HTMLAttributes, useDeferredValue } from "react";
+import { HTMLAttributes, useCallback, useDeferredValue, useEffect, useState } from "react";
 import { useSettings } from "../../services/settings";
 import { Editor } from "../editor/Editor";
+import { Log } from "../log/Log";
+import { FrameMessage } from "../viewer/interface";
 import { Viewer } from "../viewer/Viewer";
 import { withCn } from "./../../utils/tailwind";
 
@@ -12,6 +14,21 @@ export interface EntryProps extends HTMLAttributes<HTMLElement> {
 export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
   const deferredCode = useDeferredValue(code);
   const { settings } = useSettings();
+  const [logs, setLogs] = useState<FrameMessage[]>([]);
+
+  const onFrameMessage = useCallback((frameMessage: FrameMessage) => {
+    if (frameMessage.method === "console.clear") {
+      setLogs([]);
+      return;
+    }
+    setLogs(l => [...l, frameMessage]);
+  }, []);
+  const resetLog = useCallback(() => {
+    setLogs([]);
+  }, []);
+  useEffect(() => {
+    resetLog();
+  }, [resetLog, deferredCode]);
 
   return (
     <div {...withCn(props, "h-full flex flex-col")}>
@@ -27,6 +44,7 @@ export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
           code={deferredCode}
           esbuildOptions={settings}
           data-grid-area="viewer"
+          onFrameMessage={onFrameMessage}
         />
         <div
           style={{ paddingTop: 1, paddingLeft: 1 }}
@@ -39,11 +57,14 @@ export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
           onValueChange={onCodeChange}
           data-grid-area="editor"
         />
+        <Log
+          data-placeholder="bottom-toolbar"
+          data-grid-area="bottom"
+          className="resize-y overflow-auto"
+          logs={logs}
+          onClear={resetLog}
+        />
       </div>
-      <Placeholder
-        data-placeholder="bottom-toolbar"
-        className="resize-y overflow-auto"
-      />
     </div>
   );
 };

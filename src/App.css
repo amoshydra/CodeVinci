@@ -9,19 +9,21 @@ body > * {
 .entry-content-grid {
     display: grid;
     min-height: 0;
-    grid-template-rows: 1fr min-content 1fr;
+    grid-template-rows: 1fr 0 1fr min-content;
     grid-template-columns: min-content 1fr min-content 1fr;
     grid-template-areas:
         "sidebar editor editor editor"
         "sidebar divider divider divider"
         "sidebar viewer viewer viewer"
+        "sidebar bottom bottom bottom"
     ;
 
     @media screen and (min-width: 1080px) {
         grid-template-areas:
             "sidebar viewer divider editor"
-            "sidebar viewer divider  editor"
-            "sidebar viewer divider  editor"
+            "sidebar viewer divider editor"
+            "sidebar viewer divider editor"
+            "sidebar bottom bottom  bottom"
         ;
     }
 
@@ -36,5 +38,8 @@ body > * {
     }
     > *[data-grid-area="divider"] {
         grid-area: divider;
+    }
+    > *[data-grid-area="bottom"] {
+        grid-area: bottom;
     }
 }
