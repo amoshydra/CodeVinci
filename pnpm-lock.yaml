@@ -4,11 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  esbuild-wasm:
-    hash: lgg2b47evlxg37rx7yatwky3cu
-    path: patches/esbuild-wasm.patch
-
 importers:
 
   .:
