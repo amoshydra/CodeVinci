@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { withCn } from "../../utils/tailwind";
+import { PlaceholderEditor } from './Editor.Placeholder';
 import { EditorProps } from './interface';
 
 const editorPreference = ((): "monaco" | "codemirror" => {
@@ -21,7 +22,7 @@ export const Editor = ({ value, onValueChange, ...props }: EditorProps) => {
   return (
     <div {...withCn(props, "overflow-y-hidden")}>
       <Suspense
-        fallback={<PlaceholderEditor value={value} />}
+        fallback={<PlaceholderEditor data-editor={editorPreference} value={value} />}
       >
         <LaziedEditor
           value={value}
@@ -32,5 +33,4 @@ export const Editor = ({ value, onValueChange, ...props }: EditorProps) => {
   );
 };
 
-const PlaceholderEditor = (p: { value: string }) => <textarea className='h-full w-full' readOnly value={"// Loading editor...\n\n" + p.value} />
 const LaziedEditor = lazy(() => getPreferredEditorPromise);

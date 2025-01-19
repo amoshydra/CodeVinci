@@ -1,0 +1,14 @@
+.placeholderEditor[data-editor="codemirror"] {
+  padding-top: 4px;
+  padding-left: 36.2px;
+  font-size: 12px;
+  font-family: monospace;
+  line-height: 16.8px;
+}
+
+.placeholderEditor[data-editor="monaco"] {
+  padding-left: 68px;
+  font-size: 14px;
+  font-family: "Droid Sans Mono", "monospace", monospace;
+  line-height: 19px;
+}
