@@ -33,4 +33,9 @@ function App() {
 
 export default App;
 
-const initialCode = `document.body.insertAdjacentHTML("beforeend", "<h1>Hello, World!</h1>");`;
+const initialCode = `document.body.insertAdjacentHTML("beforeend", \`
+  <h1>Hello, World!</h1>
+  <div>
+    
+  </div>
+\`);`;
