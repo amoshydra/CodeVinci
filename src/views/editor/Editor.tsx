@@ -1,19 +1,25 @@
-import { InputHTMLAttributes } from "react";
+import { javascript } from '@codemirror/lang-javascript';
+import CodeMirror from '@uiw/react-codemirror';
+import { HTMLAttributes } from 'react';
 import { withCn } from "../../utils/tailwind";
 
-export interface EditorProps extends InputHTMLAttributes<HTMLTextAreaElement> {
-  onValueChange?: (value: string) => void;
+export interface EditorProps extends HTMLAttributes<HTMLDivElement> {
+  onValueChange: (value: string) => void;
+  value: string;
 }
 
-export const Editor = ({ onValueChange, ...props }: EditorProps) => {
-  const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onValueChange?.(e.target.value);
-    props.onChange?.(e);
-  };
+export const Editor = ({ value, onValueChange, ...props }: EditorProps) => {
   return (
-    <textarea
-      {...withCn(props, "resize-none font-mono whitespace-pre p-2")}
-      onChange={onChange}
-    />
+    <div {...withCn(props, "overflow-y-hidden")}>
+      <CodeMirror
+        height="100%"
+        className='h-full'
+        value={value}
+        onChange={onValueChange}
+        extensions={extensions}
+      />
+    </div>
   );
 };
+
+const extensions = [javascript({ jsx: true })];
