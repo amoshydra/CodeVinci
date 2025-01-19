@@ -1,5 +1,6 @@
-import { HTMLAttributes, useDeferredValue } from "react";
+import { HTMLAttributes, useCallback, useDeferredValue, useState } from "react";
 import { Editor } from "../editor/Editor";
+import { FrameMessage } from "../viewer/interface";
 import { Viewer } from "../viewer/Viewer";
 import { withCn } from "./../../utils/tailwind";
 
@@ -11,6 +12,11 @@ export interface EntryProps extends HTMLAttributes<HTMLElement> {
 export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
   const deferredCode = useDeferredValue(code);
 
+  const [logs, setLogs] = useState<FrameMessage[]>([]);
+
+  const onFrameMessage = useCallback((frameMessage: FrameMessage) => {
+    setLogs(l => [...l, frameMessage]);
+  }, []);
 
   return (
     <div {...withCn(props, "h-full flex flex-col")}>
@@ -25,6 +31,7 @@ export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
           className="w-full h-full"
           code={deferredCode}
           data-grid-area="viewer"
+          onFrameMessage={onFrameMessage}
         />
         <div
           style={{ paddingTop: 1, paddingLeft: 1 }}
@@ -41,7 +48,9 @@ export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
       <Placeholder
         data-placeholder="bottom-toolbar"
         className="resize-y overflow-auto"
-      />
+      >
+        {logs.map((l, i) => <div key={i}>{JSON.stringify(l)}</div>)}
+      </Placeholder>
     </div>
   );
 };

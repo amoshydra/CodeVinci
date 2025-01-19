@@ -1,6 +1,6 @@
+import { Message } from "esbuild-wasm";
 import { useEffect, useState } from "react";
 import { useEsbuild } from "./esbuild";
-import { Message } from "esbuild-wasm";
 
 export const useBuilder = (code: string) => {
   const [esbuild] = useEsbuild();

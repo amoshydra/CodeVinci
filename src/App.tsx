@@ -1,3 +1,4 @@
+import "./App.css";
 import { useCodeStorage } from "./services/useCodeStorage";
 import { Disclaimer } from "./views/disclaimer/Disclaimer";
 import { toggleComment } from "./views/disclaimer/toggleComment.util";
