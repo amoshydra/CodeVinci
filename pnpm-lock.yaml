@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@uiw/react-monacoeditor':
+    hash: d6w3oqocdoetl6tw2r6liob3ei
+    path: patches/@uiw__react-monacoeditor.patch
+
 importers:
 
   .:
@@ -19,10 +24,10 @@ importers:
         version: 4.23.7(@babel/runtime@7.26.0)(@codemirror/autocomplete@6.18.4)(@codemirror/language@6.10.8)(@codemirror/lint@6.8.4)(@codemirror/search@6.5.8)(@codemirror/state@6.5.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.36.2)(codemirror@6.0.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uiw/react-monacoeditor':
         specifier: ^3.6.0
-        version: 3.6.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 3.6.0(patch_hash=d6w3oqocdoetl6tw2r6liob3ei)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       esbuild-wasm:
         specifier: ^0.24.0
-        version: 0.24.0(patch_hash=lgg2b47evlxg37rx7yatwky3cu)
+        version: 0.24.0
       monaco-editor:
         specifier: ^0.52.2
         version: 0.52.2
@@ -1988,7 +1993,7 @@ snapshots:
       - '@codemirror/lint'
       - '@codemirror/search'
 
-  '@uiw/react-monacoeditor@3.6.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@uiw/react-monacoeditor@3.6.0(patch_hash=d6w3oqocdoetl6tw2r6liob3ei)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.26.0
       monaco-editor: 0.44.0
@@ -2101,7 +2106,7 @@ snapshots:
       graceful-fs: 4.2.11
       tapable: 2.2.1
 
-  esbuild-wasm@0.24.0(patch_hash=lgg2b47evlxg37rx7yatwky3cu): {}
+  esbuild-wasm@0.24.0: {}
 
   esbuild@0.24.0:
     optionalDependencies:

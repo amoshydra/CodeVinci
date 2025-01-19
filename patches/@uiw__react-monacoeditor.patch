@@ -1,0 +1,115 @@
+diff --git a/esm/index.js b/esm/index.js
+index 9983000bc7d7746bdef2bc319198c7af21e2b385..38d21d35da00791f94ba856d0491b9ddfe773ab1 100644
+--- a/esm/index.js
++++ b/esm/index.js
+@@ -1,11 +1,11 @@
++import _asyncToGenerator from "@babel/runtime/helpers/asyncToGenerator";
+ import _extends from "@babel/runtime/helpers/extends";
+ import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/objectWithoutPropertiesLoose";
+-import _asyncToGenerator from "@babel/runtime/helpers/asyncToGenerator";
+ var _excluded = ["width", "height", "value", "theme", "language", "autoComplete", "options", "editorDidMount", "onChange", "defaultValue"];
+ /* eslint-disable react-hooks/exhaustive-deps */
+-import React, { useImperativeHandle, useEffect, useRef, useState, useCallback } from 'react';
+ import * as monaco from 'monaco-editor';
+ import { editor, languages } from 'monaco-editor';
++import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+ // @ts-ignore
+ import codicon from 'monaco-editor/min/vs/base/browser/ui/codicons/codicon/codicon.ttf';
+ import { jsx as _jsx } from "react/jsx-runtime";
+@@ -53,13 +53,6 @@ function MonacoEditor(props, ref) {
+       $editor.current.setValue(val);
+     }
+   }, [val]);
+-  useEffect(() => {
+-    return () => {
+-      if ($editor.current) {
+-        $editor.current.dispose();
+-      }
+-    };
+-  }, []);
+   useEffect(() => {
+     if (options.theme) {
+       editor.setTheme(options.theme);
+@@ -125,6 +118,11 @@ function MonacoEditor(props, ref) {
+           throw new Error('Failed to load font codicon!!');
+         }
+       });
++    } else {
++      if ($editor.current) {
++        $editor.current.dispose();
++        $editor.current = undefined;
++      }
+     }
+   }, []);
+   return /*#__PURE__*/_jsx("div", _extends({}, other, {
+diff --git a/lib/index.js b/lib/index.js
+index 259ccc2eae213ca18974ceacacdb7e66d7c0851d..43d10f23b3852c8c7b95e1c28ce06c2ef772e0a8 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -89,13 +89,6 @@ function MonacoEditor(props, ref) {
+       $editor.current.setValue(val);
+     }
+   }, [val]);
+-  (0, _react.useEffect)(function () {
+-    return function () {
+-      if ($editor.current) {
+-        $editor.current.dispose();
+-      }
+-    };
+-  }, []);
+   (0, _react.useEffect)(function () {
+     if (options.theme) {
+       _monacoEditor.editor.setTheme(options.theme);
+@@ -159,6 +152,11 @@ function MonacoEditor(props, ref) {
+           throw new Error('Failed to load font codicon!!');
+         }
+       });
++    } else {
++      if ($editor.current) {
++        $editor.current.dispose();
++        $editor.current = undefined;
++      }
+     }
+   }, []);
+   return /*#__PURE__*/(0, _jsxRuntime.jsx)("div", (0, _objectSpread2["default"])((0, _objectSpread2["default"])({}, other), {}, {
+diff --git a/src/index.tsx b/src/index.tsx
+index 9c52e9f056682bf2b66073667ae876ce4a89e72d..6d136f55c71e2f80edb28c81b4f826a6f3b37052 100644
+--- a/src/index.tsx
++++ b/src/index.tsx
+@@ -1,8 +1,8 @@
+ /* eslint-disable react-hooks/exhaustive-deps */
+-import React, { useImperativeHandle, useEffect, useRef, useState, useCallback } from 'react';
++import type { IDisposable, Position } from 'monaco-editor';
+ import * as monaco from 'monaco-editor';
+ import { editor, languages } from 'monaco-editor';
+-import type { Position, IDisposable } from 'monaco-editor';
++import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+ // @ts-ignore
+ import codicon from 'monaco-editor/min/vs/base/browser/ui/codicons/codicon/codicon.ttf';
+ 
+@@ -86,13 +86,6 @@ function MonacoEditor(props: MonacoEditorProps, ref: React.ForwardedRef<RefEdito
+       $editor.current.setValue(val);
+     }
+   }, [val])
+-  useEffect(() => {
+-    return () => {
+-      if($editor.current) {
+-        $editor.current.dispose()
+-      }
+-    }
+-  }, []);
+ 
+   useEffect(() => {
+     if (options.theme) {
+@@ -162,6 +155,11 @@ function MonacoEditor(props: MonacoEditorProps, ref: React.ForwardedRef<RefEdito
+           throw new Error('Failed to load font codicon!!');
+         }
+       });
++    } else {
++      if ($editor.current) {
++        $editor.current.dispose();
++        $editor.current = undefined;
++      }
+     }
+   }, []);
+ 

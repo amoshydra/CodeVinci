@@ -35,5 +35,10 @@
     "typescript-eslint": "^8.18.1",
     "vite": "^6.0.3",
     "vite-plugin-monaco-editor-esm": "^2.0.1"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@uiw/react-monacoeditor": "patches/@uiw__react-monacoeditor.patch"
+    }
   }
 }
