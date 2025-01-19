@@ -19,20 +19,20 @@ export const useBuilder = (code: string) => {
         format: "esm",
         platform: "browser",
       }),
-      esbuild.build({
-        entryPoints: ["index.ts"],
-        bundle: true,
-        write: false,
-        platform: "browser",
-        target: "es2020",
-        loader: {
-          ".ts": "ts",
-          ".tsx": "tsx",
-        },
-        plugins: [],
-      }),
+      // esbuild.build({
+      //   entryPoints: ["index.ts"],
+      //   bundle: true,
+      //   write: false,
+      //   platform: "browser",
+      //   target: "es2020",
+      //   loader: {
+      //     ".ts": "ts",
+      //     ".tsx": "tsx",
+      //   },
+      //   plugins: [],
+      // }),
     ])
-      .then(([transformedPromiseResult, buildPromiseResult]) => {
+      .then(([transformedPromiseResult, /* buildPromiseResult */]) => {
         const results: string[] = [];
         const buildWarnings: Message[] = [];
         const buildErrors: Message[] = [];
@@ -45,13 +45,13 @@ export const useBuilder = (code: string) => {
           errors.push(transformedPromiseResult.reason);
         }
 
-        if (buildPromiseResult.status === "fulfilled") {
-          results.push(buildPromiseResult.value.outputFiles[0].text);
-          buildWarnings.push(...buildPromiseResult.value.warnings);
-          buildErrors.push(...buildPromiseResult.value.errors);
-        } else {
-          errors.push(buildPromiseResult.reason);
-        }
+        // if (buildPromiseResult.status === "fulfilled") {
+        //   results.push(buildPromiseResult.value.outputFiles[0].text);
+        //   buildWarnings.push(...buildPromiseResult.value.warnings);
+        //   buildErrors.push(...buildPromiseResult.value.errors);
+        // } else {
+        //   errors.push(buildPromiseResult.reason);
+        // }
 
         // use previous result if there is no new result
         setResult((previousResult) => results[0] || previousResult);
