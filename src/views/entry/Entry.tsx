@@ -1,7 +1,6 @@
 import { HTMLAttributes, useDeferredValue } from "react";
 import { Editor } from "../editor/Editor";
 import { Viewer } from "../viewer/Viewer";
-import { useBuilder } from "./../../services/builder";
 import { withCn } from "./../../utils/tailwind";
 
 export interface EntryProps extends HTMLAttributes<HTMLElement> {
@@ -12,7 +11,6 @@ export interface EntryProps extends HTMLAttributes<HTMLElement> {
 export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
   const deferredCode = useDeferredValue(code);
 
-  const [, , result] = useBuilder(deferredCode);
 
   return (
     <div {...withCn(props, "h-full flex flex-col")}>
@@ -25,7 +23,7 @@ export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
         />
         <Viewer
           className="w-full h-full"
-          script={result}
+          code={deferredCode}
           data-grid-area="viewer"
         />
         <div

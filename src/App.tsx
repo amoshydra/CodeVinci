@@ -1,4 +1,3 @@
-import { useEsbuild } from "./services/esbuild";
 import { useCodeStorage } from "./services/useCodeStorage";
 import { Disclaimer } from "./views/disclaimer/Disclaimer";
 import { toggleComment } from "./views/disclaimer/toggleComment.util";
@@ -8,7 +7,6 @@ import { Entry } from "./views/entry/Entry";
 function App() {
   const [code, setCode] = useCodeStorage(initialCode);
   const { isDisclaimerAccepted, acceptDisclaimer } = useDisclaimer();
-  const [, isLoading, error] = useEsbuild();
 
   if (!isDisclaimerAccepted) {
     return (
@@ -22,20 +20,6 @@ function App() {
         }}
       />
     );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <div>Error loading application</div>
-        <br />
-        <pre>{(error.stack || error).toString()}</pre>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return <div className="p-6">Loading application...</div>;
   }
 
   return <Entry code={code} onCodeChange={setCode} />;
