@@ -12,13 +12,19 @@ esbuildScope.__esbuild = esbuildScope.__esbuild || {
 };
 
 export const useEsbuild = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    esbuildScope.__esbuild.initPromise.then(() => {
-      setIsLoading(true);
-    });
+    esbuildScope.__esbuild.initPromise
+      .catch((error) => {
+        setError(error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      })
+    ;
   }, []);
 
-  return [esbuild, isLoading] as const;
+  return [esbuild, isLoading, error] as const;
 };

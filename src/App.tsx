@@ -8,7 +8,7 @@ import { Entry } from "./views/entry/Entry";
 function App() {
   const [code, setCode] = useCodeStorage(initialCode);
   const { isDisclaimerAccepted, acceptDisclaimer } = useDisclaimer();
-  const [, isLoading] = useEsbuild();
+  const [, isLoading, error] = useEsbuild();
 
   if (!isDisclaimerAccepted) {
     return (
@@ -24,8 +24,18 @@ function App() {
     );
   }
 
-  if (!isLoading) {
-    return <div className="">Loading...</div>;
+  if (error) {
+    return (
+      <div className="p-6">
+        <div>Error loading application</div>
+        <br />
+        <pre>{(error.stack || error).toString()}</pre>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return <div className="p-6">Loading application...</div>;
   }
 
   return <Entry code={code} onCodeChange={setCode} />;
