@@ -24,6 +24,12 @@ export const MonacoEditor = memo((p: EditorProps) => {
       language='typescript'
       height="100%"
       width="100%"
+      onKeyDown={(e) => {
+        if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
     />
   );
 });
