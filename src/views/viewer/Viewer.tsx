@@ -1,14 +1,15 @@
 import { HTMLAttributes, memo } from "react";
-import { useBuilder } from "../../services/builder";
+import { useBuilder, type UseBuilderEsbuildOptions } from "../../services/builder";
 import { useEsbuild } from "../../services/esbuild";
 import { withCn } from "../../utils/tailwind";
 import { ViewerIframe } from "./ViewerIframe";
 
 export interface ViewerProps extends HTMLAttributes<HTMLElement> {
   code: string;
+  esbuildOptions: UseBuilderEsbuildOptions,
 }
 
-export const Viewer = memo(({ code, ...props }: ViewerProps) => {
+export const Viewer = memo(({ code, esbuildOptions, ...props }: ViewerProps) => {
   const [ , isLoading, error] = useEsbuild();
 
   if (error) {
@@ -18,11 +19,11 @@ export const Viewer = memo(({ code, ...props }: ViewerProps) => {
     return <ViewerLoadingView {...props} />
   }
 
-  return <ViewerBuilder code={code} {...props} />
+  return <ViewerBuilder code={code} esbuildOptions={esbuildOptions} {...props} />
 });
 
-const ViewerBuilder = memo(({ code, ...props }: ViewerProps) => {
-  const [, , result] = useBuilder(code);
+const ViewerBuilder = memo(({ code, esbuildOptions, ...props }: ViewerProps) => {
+  const [, , result] = useBuilder(code, esbuildOptions);
 
   return (
     <ViewerIframe

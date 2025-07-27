@@ -2,7 +2,11 @@ import { Message } from "esbuild-wasm";
 import { useEffect, useState } from "react";
 import { useEsbuild } from "./esbuild";
 
-export const useBuilder = (code: string) => {
+export interface UseBuilderEsbuildOptions {
+  target: string
+}
+
+export const useBuilder = (code: string, options: UseBuilderEsbuildOptions) => {
   const [esbuild] = useEsbuild();
   const [result, setResult] = useState<string>("");
   const [error, setError] = useState<Error | null>(null);
@@ -15,7 +19,7 @@ export const useBuilder = (code: string) => {
     Promise.allSettled([
       esbuild.transform(code, {
         loader: "tsx",
-        target: "esnext",
+        target: options.target,
         format: "esm",
         platform: "browser",
       }),
