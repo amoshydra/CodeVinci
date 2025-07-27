@@ -26,8 +26,8 @@ importers:
         specifier: ^3.6.0
         version: 3.6.0(patch_hash=cead508251ac9fac297bdb5ea0c4b38a2473b1dc4c9a04251bce8d425c2660ce)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       esbuild-wasm:
-        specifier: ^0.24.0
-        version: 0.24.0
+        specifier: ^0.25.8
+        version: 0.25.8
       monaco-editor:
         specifier: ^0.52.2
         version: 0.52.2
@@ -828,8 +828,8 @@ packages:
     resolution: {integrity: sha512-LMHl3dXhTcfv8gM4kEzIUeTQ+7fpdA0l2tUf34BddXPkz2A5xJ5L/Pchd5BL6rdccM9QGvu0sWZzK1Z1t4wwyg==}
     engines: {node: '>=10.13.0'}
 
-  esbuild-wasm@0.24.0:
-    resolution: {integrity: sha512-xhNn5tL1AhkPg4ft59yXT6FkwKXiPSYyz1IeinJHUJpjvOHOIPvdmFQc0pGdjxlKSbzZc2mNmtVOWAR1EF/JAg==}
+  esbuild-wasm@0.25.8:
+    resolution: {integrity: sha512-VFUDMoZdf/NsyCepv5heZqvNLYj9HL+xEKG5tktsFbx+shR8Dt9MchKBEdu/5the2RfTzgxkO6B/nUfzmsWN9Q==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -2106,7 +2106,7 @@ snapshots:
       graceful-fs: 4.2.11
       tapable: 2.2.1
 
-  esbuild-wasm@0.24.0: {}
+  esbuild-wasm@0.25.8: {}
 
   esbuild@0.24.0:
     optionalDependencies:

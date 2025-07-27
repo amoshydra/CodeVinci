@@ -14,7 +14,7 @@
     "@tailwindcss/vite": "4.0.0-beta.8",
     "@uiw/react-codemirror": "^4.23.7",
     "@uiw/react-monacoeditor": "^3.6.0",
-    "esbuild-wasm": "^0.24.0",
+    "esbuild-wasm": "^0.25.8",
     "monaco-editor": "^0.52.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
