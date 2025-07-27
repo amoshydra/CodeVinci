@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   '@uiw/react-monacoeditor':
-    hash: d6w3oqocdoetl6tw2r6liob3ei
+    hash: cead508251ac9fac297bdb5ea0c4b38a2473b1dc4c9a04251bce8d425c2660ce
     path: patches/@uiw__react-monacoeditor.patch
 
 importers:
@@ -24,7 +24,7 @@ importers:
         version: 4.23.7(@babel/runtime@7.26.0)(@codemirror/autocomplete@6.18.4)(@codemirror/language@6.10.8)(@codemirror/lint@6.8.4)(@codemirror/search@6.5.8)(@codemirror/state@6.5.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.36.2)(codemirror@6.0.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uiw/react-monacoeditor':
         specifier: ^3.6.0
-        version: 3.6.0(patch_hash=d6w3oqocdoetl6tw2r6liob3ei)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 3.6.0(patch_hash=cead508251ac9fac297bdb5ea0c4b38a2473b1dc4c9a04251bce8d425c2660ce)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       esbuild-wasm:
         specifier: ^0.24.0
         version: 0.24.0
@@ -1993,7 +1993,7 @@ snapshots:
       - '@codemirror/lint'
       - '@codemirror/search'
 
-  '@uiw/react-monacoeditor@3.6.0(patch_hash=d6w3oqocdoetl6tw2r6liob3ei)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@uiw/react-monacoeditor@3.6.0(patch_hash=cead508251ac9fac297bdb5ea0c4b38a2473b1dc4c9a04251bce8d425c2660ce)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.26.0
       monaco-editor: 0.44.0

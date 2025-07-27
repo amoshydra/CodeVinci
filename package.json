@@ -40,5 +40,8 @@
     "patchedDependencies": {
       "@uiw/react-monacoeditor": "patches/@uiw__react-monacoeditor.patch"
     }
+  },
+  "volta": {
+    "node": "22.17.1"
   }
 }
