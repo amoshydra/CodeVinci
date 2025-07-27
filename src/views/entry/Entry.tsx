@@ -1,8 +1,8 @@
-import { HTMLAttributes, useCallback, useDeferredValue, useEffect, useState } from "react";
+import { HTMLAttributes, useDeferredValue } from "react";
 import { useSettings } from "../../services/settings";
+import { useLogger } from "../../services/useLogger";
 import { Editor } from "../editor/Editor";
 import { Log } from "../log/Log";
-import { FrameMessage } from "../viewer/interface";
 import { Viewer } from "../viewer/Viewer";
 import { withCn } from "./../../utils/tailwind";
 
@@ -14,21 +14,8 @@ export interface EntryProps extends HTMLAttributes<HTMLElement> {
 export const Entry = ({ code, onCodeChange, ...props }: EntryProps) => {
   const deferredCode = useDeferredValue(code);
   const { settings } = useSettings();
-  const [logs, setLogs] = useState<FrameMessage[]>([]);
 
-  const onFrameMessage = useCallback((frameMessage: FrameMessage) => {
-    if (frameMessage.method === "console.clear") {
-      setLogs([]);
-      return;
-    }
-    setLogs(l => [...l, frameMessage]);
-  }, []);
-  const resetLog = useCallback(() => {
-    setLogs([]);
-  }, []);
-  useEffect(() => {
-    resetLog();
-  }, [resetLog, deferredCode]);
+  const { logs, onFrameMessage, resetLog } = useLogger(deferredCode);
 
   return (
     <div {...withCn(props, "h-full flex flex-col")}>
