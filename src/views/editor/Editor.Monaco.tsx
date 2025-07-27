@@ -21,7 +21,7 @@ export const MonacoEditor = memo((p: EditorProps) => {
       value={initialValue}
       onChange={onValueChange}
       options={options}
-      language='javascript'
+      language='typescript'
       height="100%"
       width="100%"
     />
