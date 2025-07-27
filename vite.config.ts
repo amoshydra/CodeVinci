@@ -8,7 +8,7 @@ const BASE_URL = process.env.BASE_URL || "";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: `/${BASE_URL}`,
+  base: BASE_URL,
   plugins: [
     monacoEditorEsmPlugin({
       // @TODO: BUG - base path is repeated
