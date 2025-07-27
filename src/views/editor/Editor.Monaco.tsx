@@ -2,7 +2,6 @@ import ReactMonacoEditor, { MonacoEditorProps } from '@uiw/react-monacoeditor';
 import { memo, useMemo, useRef, useState } from 'react';
 import { EditorProps } from './interface';
 
-
 export const MonacoEditor = memo((p: EditorProps) => {
   // @uiw/react-monacoeditor@3.6.0 will cause cursor to be reset when value is changed
   // this useRef retained the `value` prop, prevent the underlying model to be reset.
@@ -60,6 +59,7 @@ const options: MonacoEditorProps["options"] = {
     horizontalScrollbarSize: 17,
     arrowSize: 30,
   },
+  tabSize: 2,
 } as const;
 
 const useIgnoreFirstCall = (onValueChange: (s: string) => void) => {
