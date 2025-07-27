@@ -1,4 +1,5 @@
 import "./App.css";
+import { useSettings } from "./services/settings";
 import { useCodeStorage } from "./services/useCodeStorage";
 import { Disclaimer } from "./views/disclaimer/Disclaimer";
 import { toggleComment } from "./views/disclaimer/toggleComment.util";
@@ -8,6 +9,7 @@ import { Entry } from "./views/entry/Entry";
 function App() {
   const [code, setCode] = useCodeStorage(initialCode);
   const { isDisclaimerAccepted, acceptDisclaimer } = useDisclaimer();
+  const { settings, updateSetting } = useSettings();
 
   if (!isDisclaimerAccepted) {
     return (
@@ -23,7 +25,14 @@ function App() {
     );
   }
 
-  return <Entry code={code} onCodeChange={setCode} />;
+  return (
+    <Entry
+      code={code}
+      onCodeChange={setCode}
+      settings={settings}
+      onSettingUpdate={updateSetting}
+    />
+  );
 }
 
 export default App;
@@ -31,7 +40,7 @@ export default App;
 const initialCode = `document.body.insertAdjacentHTML("beforeend", \`
   <h1>Hello, World!</h1>
   <div>
-    
+
   </div>
 \`);
 `;
