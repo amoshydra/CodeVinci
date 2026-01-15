@@ -42,8 +42,6 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
       <div
         className={cx("entry-content-grid", css({
           flex: "1",
-          borderBottomWidth: 1,
-          borderColor: "slate.300",
         }))}
         data-mode={settings.mode}
       >
@@ -68,7 +66,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               className={css({
                 width: 'full',
                 height: 'full',
-                background: "slate.300"
+                background: "stone.900"
               })}
               style={{ paddingTop: 1, paddingLeft: 1 }} data-grid-area="divider" />
           )
@@ -79,9 +77,9 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               <Placeholder data-placeholder="sidebar" data-grid-area="sidebar"
                 className={css({
                   resize: 'horizontal',
+                  background: "stone.900",
                   overflow: 'auto',
-                  borderRightWidth: 1,
-                  p: 0,
+                  p: 2,
 
                 })}
               />
@@ -100,8 +98,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
                 className={css({
                   resize: 'vertical',
                   overflow: 'auto',
-                  borderTopWidth: 1,
-                  borderColor: "slate.300",
+                  background: 'stone.900',
                 })}
                 logs={logs}
                 onClear={resetLog}
@@ -117,7 +114,6 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
 
 const Placeholder = styled('div', {
   base: {
-    borderColor: "slate.300",
     p: '4',
   },
 });

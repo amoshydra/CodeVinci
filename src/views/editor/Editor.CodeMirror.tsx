@@ -1,4 +1,5 @@
 import { javascript } from '@codemirror/lang-javascript';
+import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import CodeMirror from '@uiw/react-codemirror';
 import { css } from '../../../styled-system/css';
 import { EditorProps } from './interface';
@@ -13,6 +14,7 @@ export const CodeMirrorEditor = ({ value, onValueChange }: EditorProps) => {
       value={value}
       onChange={onValueChange}
       extensions={extensions}
+      theme={vscodeDark}
     />
   );
 };

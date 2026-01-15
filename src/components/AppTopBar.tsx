@@ -2,10 +2,12 @@ import { styled } from "../../styled-system/jsx";
 
 export const AppTopBar = styled('header', {
   base: {
-    borderBottomWidth: 1,
-    borderColor: "slate.300",
+    borderColor: "stone.900",
     p: 1,
     display: 'flex',
     justifyContent: "space-between",
+    color: 'stone.50',
+    background: 'stone.900',
+    height: 9,
   }
 });

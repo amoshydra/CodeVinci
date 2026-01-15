@@ -39,17 +39,11 @@ const getBackground = (method: string) => {
   if (method === "console.error" || method === "build.error") {
     return css({
       color: 'red.600',
-      _dark: {
-        color: 'red.400',
-      }
     });
   }
   if (method === "console.info") {
     return css({
-      color: 'blue.600',
-      _dark: {
-        color: 'blue.400',
-      }
+      color: 'blue.500',
     });
   }
   if (method === "console.warn") {
@@ -59,10 +53,12 @@ const getBackground = (method: string) => {
   }
   if (method === "console.debug") {
     return css({
-      color: 'gray.500',
+      color: 'stone.400',
     });
   }
-  return "";
+  return css({
+    color: 'stone.100',
+  });
 }
 
 const LogRenderer = ({ data }: { data: unknown }) => {

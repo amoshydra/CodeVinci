@@ -39,11 +39,12 @@ const ViewerBuilder = memo(({ code, esbuildOptions, onFrameMessage, ...props }: 
 
   return (
     // Additional div is required around iframe to make 100% height work on iOS
-    <div {...props}>
+    <div {...withCn(props, css({ backgroundColor: "white" }))}>
       <ViewerIframe
         className={css({
           height: 'full',
           width: 'full',
+          backgroundColor: "white",
         })}
         onFrameMessage={onFrameMessage}
         script={result}

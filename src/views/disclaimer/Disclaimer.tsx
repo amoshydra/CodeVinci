@@ -40,10 +40,10 @@ export const Disclaimer = ({ code, onAcceptRun, onAcceptEdit }: DisclaimerProps)
 
 const Alert = styled('div', {
   base: {
-    bg: 'red.100',
+    bg: 'red.950',
     border: '1px solid',
-    borderColor: 'red.400',
-    color: 'red.700',
+    borderColor: 'red.500',
+    color: 'red.50',
     px: '4',
     py: '3',
     rounded: 'md',
@@ -59,6 +59,7 @@ const CodeBlock = styled('pre', {
     overflow: 'auto',
     fontFamily: 'mono',
     fontSize: 'sm',
+    color: "slate.200",
   },
 });
 

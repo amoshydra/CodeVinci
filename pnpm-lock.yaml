@@ -22,6 +22,9 @@ importers:
       '@pandacss/types':
         specifier: ^1.8.1
         version: 1.8.1
+      '@uiw/codemirror-theme-vscode':
+        specifier: ^4.25.4
+        version: 4.25.4(@codemirror/language@6.10.8)(@codemirror/state@6.5.1)(@codemirror/view@6.36.2)
       '@uiw/react-codemirror':
         specifier: ^4.23.7
         version: 4.23.7(@babel/runtime@7.26.0)(@codemirror/autocomplete@6.18.4)(@codemirror/language@6.10.8)(@codemirror/lint@6.8.4)(@codemirror/search@6.5.8)(@codemirror/state@6.5.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.36.2)(codemirror@6.0.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -913,6 +916,16 @@ packages:
       '@codemirror/language': '>=6.0.0'
       '@codemirror/lint': '>=6.0.0'
       '@codemirror/search': '>=6.0.0'
+      '@codemirror/state': '>=6.0.0'
+      '@codemirror/view': '>=6.0.0'
+
+  '@uiw/codemirror-theme-vscode@4.25.4':
+    resolution: {integrity: sha512-9ob5EtLqrXBFl8uf4eFRkXjyjfyfBRVsJdt7xbc33f+2/I29/2v2nEdU/xw40+dhloxF/h1Ry281f8wAs97MWQ==}
+
+  '@uiw/codemirror-themes@4.25.4':
+    resolution: {integrity: sha512-2SLktItgcZC4p0+PfFusEbAHwbuAWe3bOOntCevVgHtrWGtGZX3IPv2k8IKZMgOXtAHyGKpJvT9/nspPn/uCQg==}
+    peerDependencies:
+      '@codemirror/language': '>=6.0.0'
       '@codemirror/state': '>=6.0.0'
       '@codemirror/view': '>=6.0.0'
 
@@ -3126,6 +3139,20 @@ snapshots:
       '@codemirror/language': 6.10.8
       '@codemirror/lint': 6.8.4
       '@codemirror/search': 6.5.8
+      '@codemirror/state': 6.5.1
+      '@codemirror/view': 6.36.2
+
+  '@uiw/codemirror-theme-vscode@4.25.4(@codemirror/language@6.10.8)(@codemirror/state@6.5.1)(@codemirror/view@6.36.2)':
+    dependencies:
+      '@uiw/codemirror-themes': 4.25.4(@codemirror/language@6.10.8)(@codemirror/state@6.5.1)(@codemirror/view@6.36.2)
+    transitivePeerDependencies:
+      - '@codemirror/language'
+      - '@codemirror/state'
+      - '@codemirror/view'
+
+  '@uiw/codemirror-themes@4.25.4(@codemirror/language@6.10.8)(@codemirror/state@6.5.1)(@codemirror/view@6.36.2)':
+    dependencies:
+      '@codemirror/language': 6.10.8
       '@codemirror/state': 6.5.1
       '@codemirror/view': 6.36.2
 

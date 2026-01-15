@@ -39,7 +39,7 @@ const options: MonacoEditorProps["options"] = {
   readOnly: false,
   cursorStyle: 'line',
   automaticLayout: true,
-  theme: 'vs-light',
+  theme: 'vs-dark',
   scrollbar: {
     // Subtle shadows to the left & top. Defaults to true.
     useShadows: false,
