@@ -6,6 +6,7 @@ export const AppTopBar = styled('header', {
     p: 1,
     display: 'flex',
     justifyContent: "space-between",
+    alignItems: "center",
     color: 'stone.50',
     background: 'stone.900',
     height: 9,
