@@ -1,37 +1,50 @@
 import structuredClone, { deserialize } from '@ungap/structured-clone';
 import { HTMLAttributes, memo, useEffect, useRef } from 'react';
-import { css, cx } from '../../../styled-system/css';
-import { withCn } from '../../utils/tailwind';
+import { css } from '../../../styled-system/css';
 
-export interface LogProps extends HTMLAttributes<HTMLDivElement> {
+export interface LogProps extends HTMLAttributes<HTMLDetailsElement> {
   logs: { method: string, args: structuredClone.SerializedRecord }[]
   onClear: () => void;
 }
 
 export const Log = memo(({ logs, onClear, ...props }: LogProps) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     if (ref.current) {
       ref.current.scrollTop = ref.current.scrollHeight;
     }
   });
   return (
-    <div
-      {...withCn(props, cx(props.className, css({
-        height: 10,
-      })))}
-      ref={ref}
-    >
-      {logs.map((log, logIndex) =>
-        <pre key={logIndex} className={getBackground(log.method)}>
-          {
-            deserialize(log.args).map((data: unknown, i: number) =>
-              <LogRenderer key={i} data={data} />
-            )
-          }
-        </pre>
-      )}
-    </div>
+    <details ref={ref} {...props}>
+      <summary
+        className={css({
+          padding: 2,
+          width: 'full',
+          display: 'block',
+          fontSize: 'sm',
+          color: "stone.500",
+          fontFamily: "mono",
+        })}
+      >
+        &gt; Console {logs.length ? `(${logs.length})` : false}
+      </summary>
+      <div
+        className={css({
+          maxHeight: '32',
+          overflow: "auto",
+        })}
+      >
+        {logs.map((log, logIndex) =>
+          <pre key={logIndex} className={getBackground(log.method)}>
+            {
+              deserialize(log.args).map((data: unknown, i: number) =>
+                <LogRenderer key={i} data={data} />
+              )
+            }
+          </pre>
+        )}
+      </div>
+    </details>
   );
 });
 
