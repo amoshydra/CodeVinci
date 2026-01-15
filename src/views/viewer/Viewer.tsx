@@ -13,7 +13,7 @@ export interface ViewerProps extends HTMLAttributes<HTMLElement> {
 }
 
 export const Viewer = memo(({ code, esbuildOptions, onFrameMessage, ...props }: ViewerProps) => {
-  const [ , isLoading, error] = useEsbuild();
+  const [, isLoading, error] = useEsbuild();
 
   if (error) {
     return <ViewerErrorView title="Unable to load builder (esbuild-wasm)" error={error} {...props} />;
@@ -37,25 +37,28 @@ const ViewerBuilder = memo(({ code, esbuildOptions, onFrameMessage, ...props }: 
   }
 
   return (
-    <ViewerIframe
-      {...withCn(props, "h-full w-full overflow-auto")}
-      onFrameMessage={onFrameMessage}
-      script={result}
-    />
+    // Additional div is required around iframe to make 100% height work on iOS
+    <div {...withCn(props, "overflow-hidden")}>
+      <ViewerIframe
+        className="h-full w-full"
+        onFrameMessage={onFrameMessage}
+        script={result}
+      />
+    </div>
   );
 });
 
 const ViewerLoadingView = (props: HTMLAttributes<HTMLElement>) => {
   return (
     <div
-      {...withCn(props, "p-6 w-full h-full")}
+      {...withCn(props, "p-6 overflow-auto")}
     >Loading viewer...</div>
   );
 }
 
 const ViewerErrorView = ({ error, title, ...props }: { error: Error, title: string }) => {
   return (
-    <div {...withCn(props, "p-6 overflow-auto w-full h-full")} >
+    <div {...withCn(props, "p-6 overflow-auto")} >
       <div>{title}</div>
       <br />
       <pre>{(error.stack || error).toString()}</pre>
