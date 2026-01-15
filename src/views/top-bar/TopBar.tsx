@@ -22,6 +22,10 @@ export const TopBar = (props: TopBarProps) => {
           }}
           className={css({
             fieldSizing: "content",
+            maxWidth: "12ch",
+            "@supports (field-sizing: content)": {
+              maxWidth: "auto",
+            }
           })}
         >
           <option disabled>Select mode</option>

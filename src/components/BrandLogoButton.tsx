@@ -32,8 +32,40 @@ export const BrandLogoButton = () => {
       >
         <div className={css({
           py: 2,
+          display: 'grid',
+          gap: 8,
         })}>
-          <p>CodeVinci is a powerful code editor and viewer.</p>
+          <p className={css({
+            maxWidth: "60ch",
+          })}>
+            CodeVinci is a browser-based JavaScript playground that allows you to write and test code directly in your web browser.
+            Built with esbuild, it provides a quick development environment with real-time preview capabilities and code persistence through URL sharing.
+          </p>
+          <p>
+            <a
+              href="https://github.com/amoshydra/CodeVinci"
+              target="_blank"
+              className={css({
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+              })}
+            >
+              <span className={css({
+                fontSize: 16,
+                fontFamily: 'monospace',
+                borderBottom: "8px solid transparent",
+                _hover: {
+                  borderColor: "rgba(13, 139, 201, 0.46)",
+                },
+                _active: {
+                  borderColor: "rgba(13, 139, 201, 0.86)",
+                }
+              })}>
+                GitHub: amoshydra/CodeVinci
+              </span>
+            </a>
+          </p>
         </div>
       </Dialog>
     </>

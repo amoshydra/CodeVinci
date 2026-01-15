@@ -29,12 +29,13 @@ export const Dialog = (props: DialogProps) => {
         borderRadius: 'md',
         padding: 4,
         boxShadow: 'lg',
-        backgroundColor: 'white',
+        backgroundColor: 'stone.900',
+        color: 'stone.50',
         justifySelf: "center",
         marginTop: 'min(2.5rem, 6vw)',
         _backdrop: {
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(2px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(8px)',
         },
       })}
       onClick={e => e.stopPropagation()}
