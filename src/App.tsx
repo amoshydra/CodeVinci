@@ -42,5 +42,11 @@ const initialCode = `document.body.insertAdjacentHTML("beforeend", \`
   <div>
 
   </div>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: sans-serif;
+    }
+  </style>
 \`);
 `;
