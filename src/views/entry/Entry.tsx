@@ -1,12 +1,14 @@
 import { HTMLAttributes, useDeferredValue } from "react";
+import { css, cx } from "../../../styled-system/css";
+import { styled } from "../../../styled-system/jsx";
 import { UseSettingsReturn } from "../../services/settings";
 import { useLogger } from "../../services/useLogger";
 import { esbuildLaunchInNewWindow } from "../../utils/esbuilder.opener";
+import { withCn } from "../../utils/tailwind";
 import { Editor } from "../editor/Editor";
 import { Log } from "../log/Log";
 import { TopBar } from "../top-bar/TopBar";
 import { Viewer } from "../viewer/Viewer";
-import { withCn } from "./../../utils/tailwind";
 
 export interface EntryProps extends HTMLAttributes<HTMLElement> {
   code: string;
@@ -20,7 +22,13 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
   const { logs, onFrameMessage, resetLog } = useLogger(deferredCode);
 
   return (
-    <div {...withCn(props, "h-full flex flex-col")}>
+    <div
+      {...withCn(props, css({
+        height: "full",
+        display: 'flex',
+        flexDirection: "column",
+      }))}
+    >
       <TopBar
         viewMode={settings.mode}
         onViewModeChange={(newViewMode) => {
@@ -32,13 +40,21 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
         }}
       />
       <div
-        className="entry-content-grid flex-1"
+        className={cx("entry-content-grid", css({
+          flex: "1",
+          borderBottomWidth: 1,
+          borderColor: "slate.300",
+        }))}
         data-mode={settings.mode}
       >
         {
           settings.mode.includes("view") && (
             <Viewer
-              className="w-full h-full"
+              className={css({
+                height: 'full',
+                width: 'full',
+                resize: 'both',
+              })}
               code={deferredCode}
               esbuildOptions={settings}
               data-grid-area="viewer"
@@ -49,22 +65,31 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
         {
           settings.mode.includes("-") && (
             <div
-              style={{ paddingTop: 1, paddingLeft: 1 }}
-              className="w-full h-full bg-black"
-              data-grid-area="divider"
-            />
+              className={css({
+                width: 'full',
+                height: 'full',
+                background: "slate.300"
+              })}
+              style={{ paddingTop: 1, paddingLeft: 1 }} data-grid-area="divider" />
           )
         }
         {
           settings.mode.includes("edit") && (
             <>
-              <Placeholder
-                data-placeholder="sidebar"
-                data-grid-area="sidebar"
-                className="resize-x overflow-auto"
+              <Placeholder data-placeholder="sidebar" data-grid-area="sidebar"
+                className={css({
+                  resize: 'horizontal',
+                  overflow: 'auto',
+                  borderRightWidth: 1,
+                  p: 0,
+
+                })}
               />
               <Editor
-                className="w-full h-full"
+                className={css({
+                  height: 'full',
+                  width: 'full',
+                })}
                 value={code}
                 onValueChange={onCodeChange}
                 data-grid-area="editor"
@@ -72,7 +97,12 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               <Log
                 data-placeholder="bottom-toolbar"
                 data-grid-area="bottom"
-                className="resize-y overflow-auto"
+                className={css({
+                  resize: 'vertical',
+                  overflow: 'auto',
+                  borderTopWidth: 1,
+                  borderColor: "slate.300",
+                })}
                 logs={logs}
                 onClear={resetLog}
               />
@@ -84,6 +114,10 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
   );
 };
 
-const Placeholder = (props: HTMLAttributes<HTMLDivElement>) => {
-  return <div {...withCn(props, "border-2 p-4")} />;
-};
+
+const Placeholder = styled('div', {
+  base: {
+    borderColor: "slate.300",
+    p: '4',
+  },
+});

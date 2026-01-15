@@ -1,6 +1,5 @@
 import { HTMLAttributes, memo, useEffect } from "react";
 import { createEsbuilderHtmlTemplate } from "../../utils/esbuilder.html";
-import { withCn } from "../../utils/tailwind";
 import { onErrorFunctionName } from "./common";
 import { MessageEventFrameMessage, OnFrameMessage } from "./interface";
 import iframeScript from "./ViewerIframeScript?url";
@@ -28,7 +27,7 @@ export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIf
 
   return (
     <iframe
-      {...withCn(props, "h-full w-full overflow-auto")}
+      {...props}
       sandbox="allow-scripts"
       srcDoc={srcDoc}
     />

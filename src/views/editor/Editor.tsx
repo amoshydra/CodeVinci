@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { css } from '../../../styled-system/css';
 import { withCn } from "../../utils/tailwind";
 import { PlaceholderEditor } from './Editor.Placeholder';
 import { EditorProps } from './interface';
@@ -22,7 +23,7 @@ const getPreferredEditorPromise = getPreferredEditor().then(component => ({ defa
 
 export const Editor = ({ value, onValueChange, ...props }: EditorProps) => {
   return (
-    <div {...withCn(props, "overflow-y-hidden")}>
+    <div {...withCn(props, css({ overflowY: "hidden" }))}>
       <Suspense
         fallback={<PlaceholderEditor data-editor={editorPreference} value={value} />}
       >

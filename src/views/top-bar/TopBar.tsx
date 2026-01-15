@@ -1,4 +1,5 @@
 import { HTMLProps } from "react";
+import { css } from "../../../styled-system/css";
 import { SettingsMode } from "../../services/settings";
 import { withCn } from "../../utils/tailwind";
 
@@ -9,7 +10,15 @@ export interface TopBarProps extends HTMLProps<HTMLDivElement> {
 
 export const TopBar = (props: TopBarProps) => {
   return (
-    <div {...withCn(props, "border-2 p-1 flex justify-between")}>
+    <div
+      {...withCn(props, css({
+        borderBottomWidth: 1,
+        borderColor: "slate.300",
+        p: 1,
+        display: 'flex',
+        justifyContent: "space-between",
+      }))}
+    >
       <div>CodeVinci</div>
       <div>
         <select
@@ -18,7 +27,9 @@ export const TopBar = (props: TopBarProps) => {
             const value = e.currentTarget.value;
             props.onViewModeChange(value as SettingsMode);
           }}
-          className="field-sizing-content"
+          className={css({
+            fieldSizing: "content",
+          })}
         >
           <option disabled>Select mode</option>
           <option value="view-edit">View & Edit</option>

@@ -1,5 +1,6 @@
 import { serialize } from "@ungap/structured-clone";
 import { HTMLAttributes, memo } from "react";
+import { css } from "../../../styled-system/css";
 import { useBuilder, type UseBuilderEsbuildOptions } from "../../services/builder";
 import { useEsbuild } from "../../services/esbuild";
 import { withCn } from "../../utils/tailwind";
@@ -38,9 +39,12 @@ const ViewerBuilder = memo(({ code, esbuildOptions, onFrameMessage, ...props }: 
 
   return (
     // Additional div is required around iframe to make 100% height work on iOS
-    <div {...withCn(props, "overflow-hidden")}>
+    <div {...props}>
       <ViewerIframe
-        className="h-full w-full"
+        className={css({
+          height: 'full',
+          width: 'full',
+        })}
         onFrameMessage={onFrameMessage}
         script={result}
       />
@@ -51,14 +55,22 @@ const ViewerBuilder = memo(({ code, esbuildOptions, onFrameMessage, ...props }: 
 const ViewerLoadingView = (props: HTMLAttributes<HTMLElement>) => {
   return (
     <div
-      {...withCn(props, "p-6 overflow-auto")}
+      {...withCn(props, css({
+        p: 6,
+        overflow: "auto",
+      }))}
     >Loading viewer...</div>
   );
 }
 
 const ViewerErrorView = ({ error, title, ...props }: { error: Error, title: string }) => {
   return (
-    <div {...withCn(props, "p-6 overflow-auto")} >
+    <div
+      {...withCn(props, css({
+        p: 6,
+        overflow: "auto",
+      }))}
+    >
       <div>{title}</div>
       <br />
       <pre>{(error.stack || error).toString()}</pre>

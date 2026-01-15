@@ -1,6 +1,7 @@
 import structuredClone, { deserialize } from '@ungap/structured-clone';
 import { HTMLAttributes, memo, useEffect, useRef } from 'react';
-import { cn } from '../../utils/tailwind';
+import { css, cx } from '../../../styled-system/css';
+import { withCn } from '../../utils/tailwind';
 
 export interface LogProps extends HTMLAttributes<HTMLDivElement> {
   logs: { method: string, args: structuredClone.SerializedRecord }[]
@@ -16,8 +17,9 @@ export const Log = memo(({ logs, onClear, ...props }: LogProps) => {
   });
   return (
     <div
-      {...props}
-      className={cn(props, "h-10 border-2")}
+      {...withCn(props, cx(props.className, css({
+        height: 10,
+      })))}
       ref={ref}
     >
       {logs.map((log, logIndex) =>
@@ -35,16 +37,30 @@ export const Log = memo(({ logs, onClear, ...props }: LogProps) => {
 
 const getBackground = (method: string) => {
   if (method === "console.error" || method === "build.error") {
-    return "text-red-800 dark:text-red-400"
+    return css({
+      color: 'red.600',
+      _dark: {
+        color: 'red.400',
+      }
+    });
   }
   if (method === "console.info") {
-    return "text-blue-800 dark:text-blue-400"
+    return css({
+      color: 'blue.600',
+      _dark: {
+        color: 'blue.400',
+      }
+    });
   }
   if (method === "console.warn") {
-    return "text-orange-600"
+    return css({
+      color: 'yellow.500',
+    });
   }
   if (method === "console.debug") {
-    return "text-gray-500"
+    return css({
+      color: 'gray.500',
+    });
   }
   return "";
 }

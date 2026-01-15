@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@layer reset, base, tokens, recipes, utilities;
 
 :root,
 body,

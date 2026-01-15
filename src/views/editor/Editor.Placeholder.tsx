@@ -1,3 +1,4 @@
+import { css, cx } from "../../../styled-system/css";
 import PlaceholderModuleCss from "./Editor.Placeholder.module.css";
 import { EditorProps } from "./interface";
 
@@ -10,7 +11,10 @@ export const PlaceholderEditor = (p: PlaceholderEditorProps) => {
   return (
     <textarea
       data-editor={p["data-editor"]}
-      className={`h-full w-full ${PlaceholderModuleCss.placeholderEditor}`}
+      className={cx(PlaceholderModuleCss.placeholderEditor, css({
+        width: "full",
+        height: "full",
+      }))}
       readOnly
       value={p.value}
     />
