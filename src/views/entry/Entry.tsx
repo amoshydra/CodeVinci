@@ -30,11 +30,6 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
         className="entry-content-grid flex-1"
         data-mode={settings.mode}
       >
-        <Placeholder
-          data-placeholder="sidebar"
-          data-grid-area="sidebar"
-          className="resize-x overflow-auto"
-        />
         {
           settings.mode.includes("view") && (
             <Viewer
@@ -58,6 +53,11 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
         {
           settings.mode.includes("edit") && (
             <>
+              <Placeholder
+                data-placeholder="sidebar"
+                data-grid-area="sidebar"
+                className="resize-x overflow-auto"
+              />
               <Editor
                 className="w-full h-full"
                 value={code}

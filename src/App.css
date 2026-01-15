@@ -26,9 +26,9 @@ body > * {
     }
     &[data-mode="view"] {
         grid-template-rows: 1fr;
-        grid-template-columns: min-content 1fr;
+        grid-template-columns: 1fr;
         grid-template-areas:
-            "sidebar viewer"
+            "viewer"
         ;
     }
 
