@@ -1,6 +1,7 @@
 import { HTMLAttributes, useDeferredValue } from "react";
 import { UseSettingsReturn } from "../../services/settings";
 import { useLogger } from "../../services/useLogger";
+import { esbuildLaunchInNewWindow } from "../../utils/esbuilder.opener";
 import { Editor } from "../editor/Editor";
 import { Log } from "../log/Log";
 import { TopBar } from "../top-bar/TopBar";
@@ -23,6 +24,10 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
       <TopBar
         viewMode={settings.mode}
         onViewModeChange={(newViewMode) => {
+          if (newViewMode === "external") {
+            esbuildLaunchInNewWindow(deferredCode, settings);
+            return;
+          }
           onSettingUpdate("mode", newViewMode);
         }}
       />

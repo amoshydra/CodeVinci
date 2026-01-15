@@ -1,5 +1,6 @@
 import { Message } from "esbuild-wasm";
 import { useEffect, useState } from "react";
+import { esbuilderTranform } from "../utils/esbuilder";
 import { useEsbuild } from "./esbuild";
 
 export interface UseBuilderEsbuildOptions {
@@ -17,24 +18,7 @@ export const useBuilder = (code: string, options: UseBuilderEsbuildOptions) => {
   useEffect(() => {
     setIsLoading(true);
     Promise.allSettled([
-      esbuild.transform(code, {
-        loader: "tsx",
-        target: options.target,
-        format: "esm",
-        platform: "browser",
-      }),
-      // esbuild.build({
-      //   entryPoints: ["index.ts"],
-      //   bundle: true,
-      //   write: false,
-      //   platform: "browser",
-      //   target: "es2020",
-      //   loader: {
-      //     ".ts": "ts",
-      //     ".tsx": "tsx",
-      //   },
-      //   plugins: [],
-      // }),
+      esbuilderTranform(code, options),
     ])
       .then(([transformedPromiseResult, /* buildPromiseResult */]) => {
         const results: string[] = [];
@@ -48,14 +32,6 @@ export const useBuilder = (code: string, options: UseBuilderEsbuildOptions) => {
         } else {
           errors.push(transformedPromiseResult.reason);
         }
-
-        // if (buildPromiseResult.status === "fulfilled") {
-        //   results.push(buildPromiseResult.value.outputFiles[0].text);
-        //   buildWarnings.push(...buildPromiseResult.value.warnings);
-        //   buildErrors.push(...buildPromiseResult.value.errors);
-        // } else {
-        //   errors.push(buildPromiseResult.reason);
-        // }
 
         // use previous result if there is no new result
         setResult((previousResult) => results[0] || previousResult);

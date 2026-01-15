@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-export type SettingsMode = "view-edit" | "view" | "edit";
+export type SettingsMode = "view-edit" | "view" | "edit" | "external";
 
 export interface UseSettingsReturn {
   target: string;

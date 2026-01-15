@@ -12,13 +12,19 @@ export const TopBar = (props: TopBarProps) => {
     <div {...withCn(props, "border-2 p-1 flex justify-between")}>
       <div>CodeVinci</div>
       <div>
-        <select value={props.viewMode} onChange={e => {
-          props.onViewModeChange(e.currentTarget.value as SettingsMode);
-        }}>
+        <select
+          value={props.viewMode}
+          onChange={e => {
+            const value = e.currentTarget.value;
+            props.onViewModeChange(value as SettingsMode);
+          }}
+          className="field-sizing-content"
+        >
           <option disabled>Select mode</option>
           <option value="view-edit">View & Edit</option>
           <option value="edit">Edit only</option>
           <option value="view">View only</option>
+          <option value="external">Open in a new window</option>
         </select>
       </div>
     </div>
