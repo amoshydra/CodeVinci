@@ -1,4 +1,6 @@
 import { Flex, Stack, styled } from '../../../styled-system/jsx';
+import { AppTopBar } from '../../components/AppTopBar';
+import { BrandLogoButton } from '../../components/BrandLogoButton';
 
 export interface DisclaimerProps {
   code: string;
@@ -7,8 +9,12 @@ export interface DisclaimerProps {
 }
 
 export const Disclaimer = ({ code, onAcceptRun, onAcceptEdit }: DisclaimerProps) => {
-  return (
+  return (<>
+    <AppTopBar>
+      <BrandLogoButton />
+    </AppTopBar>
     <Stack p="6" gap="8">
+
       <Alert role="alert">
         <styled.strong fontWeight="bold">Warning!{" "}</styled.strong>
         <styled.span display={{ base: 'block', sm: 'inline' }}>
@@ -28,6 +34,7 @@ export const Disclaimer = ({ code, onAcceptRun, onAcceptEdit }: DisclaimerProps)
         </ActionButton>
       </Flex>
     </Stack>
+    </>
   );
 };
 

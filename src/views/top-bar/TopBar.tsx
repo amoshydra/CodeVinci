@@ -1,7 +1,8 @@
 import { HTMLProps } from "react";
 import { css } from "../../../styled-system/css";
+import { AppTopBar } from "../../components/AppTopBar";
+import { BrandLogoButton } from "../../components/BrandLogoButton";
 import { SettingsMode } from "../../services/settings";
-import { withCn } from "../../utils/tailwind";
 
 export interface TopBarProps extends HTMLProps<HTMLDivElement> {
   viewMode: SettingsMode
@@ -10,16 +11,8 @@ export interface TopBarProps extends HTMLProps<HTMLDivElement> {
 
 export const TopBar = (props: TopBarProps) => {
   return (
-    <div
-      {...withCn(props, css({
-        borderBottomWidth: 1,
-        borderColor: "slate.300",
-        p: 1,
-        display: 'flex',
-        justifyContent: "space-between",
-      }))}
-    >
-      <div>CodeVinci</div>
+    <AppTopBar>
+      <BrandLogoButton />
       <div>
         <select
           value={props.viewMode}
@@ -38,6 +31,6 @@ export const TopBar = (props: TopBarProps) => {
           <option value="external">Open in a new window</option>
         </select>
       </div>
-    </div>
+    </AppTopBar>
   );
 };
