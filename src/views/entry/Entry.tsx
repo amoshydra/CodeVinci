@@ -1,6 +1,7 @@
 import { HTMLAttributes, useDeferredValue } from "react";
-import { css, cx } from "../../../styled-system/css";
+import { css } from "../../../styled-system/css";
 import { styled } from "../../../styled-system/jsx";
+import { EntryContentGrid, A as GridArea } from "../../components/EntryContentGrid";
 import { UseSettingsReturn } from "../../services/settings";
 import { useLogger } from "../../services/useLogger";
 import { esbuildLaunchInNewWindow } from "../../utils/esbuilder.opener";
@@ -39,11 +40,11 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
           onSettingUpdate("mode", newViewMode);
         }}
       />
-      <div
-        className={cx("entry-content-grid", css({
+      <EntryContentGrid
+        className={css({
           flex: "1",
-        }))}
-        data-mode={settings.mode}
+        })}
+        mode={settings.mode}
       >
         {
           settings.mode.includes("view") && (
@@ -55,7 +56,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               })}
               code={deferredCode}
               esbuildOptions={settings}
-              data-grid-area="viewer"
+              data-grid-area={GridArea.viewer_}
               onFrameMessage={onFrameMessage}
             />
           )
@@ -68,13 +69,13 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
                 height: 'full',
                 background: "stone.900"
               })}
-              style={{ paddingTop: 1, paddingLeft: 1 }} data-grid-area="divider" />
+              style={{ paddingTop: 1, paddingLeft: 1 }} data-grid-area={GridArea.divider} />
           )
         }
         {
           settings.mode.includes("edit") && (
             <>
-              <Placeholder data-placeholder="sidebar" data-grid-area="sidebar"
+              <Placeholder data-placeholder="sidebar" data-grid-area={GridArea.sidebar}
                 className={css({
                   resize: 'horizontal',
                   background: "stone.900",
@@ -90,11 +91,11 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
                 })}
                 value={code}
                 onValueChange={onCodeChange}
-                data-grid-area="editor"
+                data-grid-area={GridArea.editor_}
               />
               <Log
                 data-placeholder="bottom-toolbar"
-                data-grid-area="bottom"
+                data-grid-area={GridArea.bottom_}
                 className={css({
                   resize: 'vertical',
                   overflow: 'auto',
@@ -106,7 +107,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
             </>
           )
         }
-      </div>
+      </EntryContentGrid>
     </div>
   );
 };
