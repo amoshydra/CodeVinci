@@ -57,25 +57,62 @@ const ViewerBuilder = memo(({ code, esbuildOptions, onFrameMessage, ...props }: 
 const ViewerLoadingView = (props: HTMLAttributes<HTMLElement>) => {
   return (
     <div
-      {...withCn(props, css({
-        p: 6,
-        overflow: "auto",
-      }))}
+      {...withCn(props, cssViewMessage)}
     >Loading viewer...</div>
   );
 }
 
 const ViewerErrorView = ({ error, title, ...props }: { error: Error, title: string }) => {
+  const errorMessage = (error.stack || error).toString();
+
   return (
     <div
-      {...withCn(props, css({
-        p: 6,
-        overflow: "auto",
-      }))}
+      {...withCn(props, cssViewMessage)}
     >
-      <div>{title}</div>
+      <div
+        className={css({
+          fontWeight: 600,
+          color: "red.500",
+        })}
+      >{title}</div>
       <br />
-      <pre>{(error.stack || error).toString()}</pre>
+      <ViewerErrorViewHintWebAssemblyMissing errorMessage={errorMessage} />
+      <pre
+        className={css({
+          fontSize: "xs"
+        })}
+      >{errorMessage}</pre>
     </div>
   );
 }
+
+
+const ViewerErrorViewHintWebAssemblyMissing = ({ errorMessage }: { errorMessage: string }) => {
+  const isWebAssemblyMissing = typeof WebAssembly === 'undefined';
+  const isWebAssemblyError = /WebAssembly/i.test(errorMessage) && isWebAssemblyMissing;
+
+  if (!isWebAssemblyError) return false;
+
+  return (
+    <p className={css({ color: "red.600" })}>
+      An error occurs because WebAssembly is not available in your browser.
+      <ul className={css({ paddingLeft: 4, paddingTop: 2, listStyle: 'outside' })}>
+        <li>Check if WebAssembly is enabled in your browser settings.</li>
+        <li>Ensure your browser support WebAssembly. See {""}
+          <a
+            href="https://caniuse.com/wasm"
+            className={css({
+              textDecoration: "underline"
+            })}
+          >https://caniuse.com/wasm</a>.
+        </li>
+      </ul>
+      <br />
+    </p>
+  )
+};
+
+const cssViewMessage = css({
+  p: 6,
+  overflow: "auto",
+});

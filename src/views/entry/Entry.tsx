@@ -34,7 +34,11 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
         viewMode={settings.mode}
         onViewModeChange={(newViewMode) => {
           if (newViewMode === "external") {
-            esbuildLaunchInNewWindow(deferredCode, settings);
+            esbuildLaunchInNewWindow(deferredCode, settings)
+              .catch(e => {
+                alert("Unable to open. See error: " + e.message);
+              })
+              ;
             return;
           }
           onSettingUpdate("mode", newViewMode);
