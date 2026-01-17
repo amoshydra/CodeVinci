@@ -1,9 +1,10 @@
 .placeholderEditor[data-editor="codemirror"] {
   padding-top: 4px;
-  padding-left: 36.2px;
-  font-size: 12px;
-  font-family: monospace;
-  line-height: 16.8px;
+  padding-left: 44.8px;
+  font-size: 16px;
+  font-family: Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace;
+  line-height: 22.4px;
+  white-space: pre;
 }
 
 .placeholderEditor[data-editor="monaco"] {
@@ -11,4 +12,5 @@
   font-size: 14px;
   font-family: "Droid Sans Mono", "monospace", monospace;
   line-height: 19px;
+  white-space: pre;
 }
