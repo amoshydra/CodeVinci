@@ -1,6 +1,15 @@
 import { serialize } from '@ungap/structured-clone';
 import { onErrorFunctionName } from './common';
 
+
+const origin = (() => {
+  const origin = [...document.scripts].find(x => x.dataset.origin)?.dataset.origin
+  if (origin) {
+    return origin;
+  }
+  return new URL(import.meta.url).origin;
+})();
+
 function send(method: string, args: unknown[]) {
   const message = {
     _id: 'codevinci',
@@ -9,7 +18,7 @@ function send(method: string, args: unknown[]) {
       lossy: true,
     }),
   };
-  const { origin } = new URL(import.meta.url);
+
   window.parent.postMessage(message, origin);
 }
 

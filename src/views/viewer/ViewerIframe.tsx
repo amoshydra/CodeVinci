@@ -37,7 +37,7 @@ export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIf
 
 const getSrcDoc = (script: string) =>
   createEsbuilderHtmlTemplate("", `
-    <script type="module" src=${JSON.stringify(iframeScript)}></script>
+    <script type="module" src=${JSON.stringify(iframeScript)} data-origin=${location.origin}></script>
     <script type="module" onerror="${onErrorFunctionName}()">${script}</script>
   `)
   ;
