@@ -3,11 +3,25 @@
     <head>
         <meta charset="UTF-8" />
         <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=contain" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=overlays-content">
         <meta name="theme-color" content="#1c1917" />
         <title>CodeVinci</title>
+        <style>
+            body {
+                background: #1c1917;
+                color: white;
+                color-scheme: dark;
+            }
+        </style>
     </head>
-    <body style="background: #1c1917; color: white; color-scheme: dark;">
+    <body>
+        <noscript>
+            <div style="padding: 1rem; font-family: sans-serif">
+                JavaScript is required to run this app.
+                <br /><br />
+                Project: <a href="https://github.com/amoshydra/CodeVinci">amoshydra/CodeVinci</a>
+            </div>
+        </noscript>
         <div id="root"></div>
         <script type="module" src="/src/main.tsx"></script>
     </body>
