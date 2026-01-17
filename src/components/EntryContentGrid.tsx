@@ -46,11 +46,11 @@ export const EntryContentGrid = styled('div', {
           "sidebar viewer_ viewer_ viewer_"
           "sidebar bottom_ bottom_ bottom_"
         `,
-        "@media screen and (min-width: 1080px)": {
+        "@media screen and (orientation: landscape)": {
           gridTemplateAreas: `
-            "sidebar viewer_ divider editor_"
-            "sidebar viewer_ divider editor_"
-            "sidebar viewer_ divider editor_"
+            "sidebar editor_ divider viewer_"
+            "sidebar editor_ divider viewer_"
+            "sidebar editor_ divider viewer_"
             "sidebar bottom_ bottom_ bottom_"
           `,
         },

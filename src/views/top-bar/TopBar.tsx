@@ -22,8 +22,9 @@ export const TopBar = (props: TopBarProps) => {
           }}
           className={css({
             fieldSizing: "content",
-            maxWidth: "20ch",
+            maxWidth: "15ch",
             fontFamily: "mono",
+            textAlign: 'right',
             fontSize: "sm",
             padding: 2,
             letterSpacing: -0.125,
