@@ -20,7 +20,7 @@ export interface EntryProps extends HTMLAttributes<HTMLElement> {
 
 export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props }: EntryProps) => {
   const deferredCode = useDeferredValue(code);
-  const { logs, onFrameMessage, resetLog } = useLogger(deferredCode);
+  const { logs, onFrameMessage, resetLog, counts } = useLogger(deferredCode);
 
   return (
     <div
@@ -103,6 +103,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
                   background: 'stone.950',
                 })}
                 logs={logs}
+                counts={counts}
                 onClear={resetLog}
               />
             </>

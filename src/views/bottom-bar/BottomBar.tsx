@@ -7,10 +7,11 @@ import { LoggerButton } from '../log/LoggerButton';
 
 export interface BottomBarProps extends HTMLAttributes<HTMLDivElement> {
   logs: { method: string, args: structuredClone.SerializedRecord }[]
+  counts: { error: number; warn: number; info: number; other: number }
   onClear: () => void;
 }
 
-export const BottomBar = (({ logs, onClear, ...props }: BottomBarProps) => {
+export const BottomBar = (({ logs, counts, onClear, ...props }: BottomBarProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const toggleLogger = useCallback(() => {
     setDetailsOpen(v => !v);
@@ -50,6 +51,7 @@ export const BottomBar = (({ logs, onClear, ...props }: BottomBarProps) => {
 
       <LoggerButton
         logs={logs}
+        counts={counts}
         data-grid-area="button"
         onClick={toggleLogger}
       />

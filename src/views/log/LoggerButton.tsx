@@ -7,25 +7,10 @@ import { LogPropLog } from "./Logger.interface.ts";
 
 export interface LoggerButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   logs: LogPropLog[]
+  counts: { error: number; warn: number; info: number; other: number }
 }
 
-export const LoggerButton = memo(({ logs, ...props }: LoggerButtonProps) => {
-  let error = 0;
-  let warn = 0;
-  let info = 0;
-  let other = 0;
-
-  for (const log of logs) {
-    if (log.method === "console.error" || log.method === "build.error") {
-      error += 1;
-    } else if (log.method === "console.warn") {
-      warn += 1;
-    } else if (log.method === "console.info") {
-      info += 1;
-    } else {
-      other += 1;
-    }
-  }
+export const LoggerButton = memo(({ logs, counts, ...props }: LoggerButtonProps) => {
 
   return (
     <button
@@ -84,10 +69,10 @@ export const LoggerButton = memo(({ logs, ...props }: LoggerButtonProps) => {
           paddingBottom: 1,
         })}
       >
-        <LoggerDot kind="error" count={error} />
-        <LoggerDot kind="warn" count={warn} />
-        <LoggerDot kind="info" count={info} />
-        <LoggerDot kind="other" count={other} />
+        <LoggerDot kind="error" count={counts.error} />
+        <LoggerDot kind="warn" count={counts.warn} />
+        <LoggerDot kind="info" count={counts.info} />
+        <LoggerDot kind="other" count={counts.other} />
       </div>
     </button>
   )
