@@ -55,8 +55,11 @@ export const BrandLogoButton = () => {
                 fontSize: 16,
                 fontFamily: 'monospace',
                 borderBottom: "8px solid transparent",
-                _hover: {
-                  borderColor: "rgba(13, 139, 201, 0.46)",
+                borderColor: "rgba(13, 139, 201, 0.46)",
+                "@media(hover: hover)": {
+                  _hover: {
+                    borderColor: "rgba(13, 139, 201, 0.66)",
+                  }
                 },
                 _active: {
                   borderColor: "rgba(13, 139, 201, 0.86)",
