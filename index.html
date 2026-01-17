@@ -7,10 +7,19 @@
         <meta name="theme-color" content="#1c1917" />
         <title>CodeVinci</title>
         <style>
-            body {
-                background: #1c1917;
-                color: white;
-                color-scheme: dark;
+            :root {
+                color: var(--color-fg);
+                background-color: var(--color-bg);
+
+                color-scheme: light dark;
+                --color-fg: #1c1917;
+                --color-bg: white;
+            }
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --color-fg: white;
+                    --color-bg: #1c1917;
+                }
             }
         </style>
     </head>
