@@ -8,7 +8,7 @@ export const AppTopBar = styled('header', {
     justifyContent: "space-between",
     alignItems: "center",
     color: 'stone.50',
-    background: 'stone.900',
+    background: 'stone.950',
     height: 9,
   }
 });

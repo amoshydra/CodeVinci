@@ -6,8 +6,8 @@ import { UseSettingsReturn } from "../../services/settings";
 import { useLogger } from "../../services/useLogger";
 import { esbuildLaunchInNewWindow } from "../../utils/esbuilder.opener";
 import { withCn } from "../../utils/tailwind";
+import { BottomBar } from "../bottom-bar/BottomBar";
 import { Editor } from "../editor/Editor";
-import { Log } from "../log/Log";
 import { TopBar } from "../top-bar/TopBar";
 import { Viewer } from "../viewer/Viewer";
 
@@ -71,7 +71,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               className={css({
                 width: 'full',
                 height: 'full',
-                background: "stone.900"
+                background: "stone.950"
               })}
               style={{ paddingTop: 1, paddingLeft: 1 }} data-grid-area={GridArea.divider} />
           )
@@ -82,10 +82,9 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               <Placeholder data-placeholder="sidebar" data-grid-area={GridArea.sidebar}
                 className={css({
                   resize: 'horizontal',
-                  background: "stone.900",
+                  background: "stone.950",
                   overflow: 'auto',
-                  p: 2,
-
+                  display: 'none'
                 })}
               />
               <Editor
@@ -97,13 +96,11 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
                 onValueChange={onCodeChange}
                 data-grid-area={GridArea.editor_}
               />
-              <Log
+              <BottomBar
                 data-placeholder="bottom-toolbar"
                 data-grid-area={GridArea.bottom_}
                 className={css({
-                  resize: 'vertical',
-                  overflow: 'auto',
-                  background: 'stone.900',
+                  background: 'stone.950',
                 })}
                 logs={logs}
                 onClear={resetLog}

@@ -44,6 +44,8 @@ const ViewerBuilder = memo(({ code, esbuildOptions, onFrameMessage, ...props }: 
         className={css({
           height: 'full',
           width: 'full',
+          background: 'light-dark(white, #1c1917)',
+          color: 'light-dark(#1c1917, white)',
         })}
         onFrameMessage={onFrameMessage}
         script={result}
