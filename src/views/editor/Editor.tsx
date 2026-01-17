@@ -19,13 +19,27 @@ const getPreferredEditor = async () => {
   return (await import("./Editor.CodeMirror")).CodeMirrorEditor
 }
 // start fetching editor as this module load
-const getPreferredEditorPromise = getPreferredEditor().then(component => ({ default: component }));
+const getPreferredEditorPromise = getPreferredEditor()
+  .then(component => ({ default: component }))
+  .catch(e => {
+    console.error("Failed to load, loading fallback", e);
+    return ({
+      default: (p: EditorProps) => <PlaceholderEditor {...p} data-editor={editorPreference} />
+    });
+  })
+  ;
 
 export const Editor = ({ value, onValueChange, ...props }: EditorProps) => {
   return (
     <div {...withCn(props, css({ overflowY: "hidden" }))}>
       <Suspense
-        fallback={<PlaceholderEditor data-editor={editorPreference} value={value} />}
+        fallback={
+          <PlaceholderEditor
+            data-editor={editorPreference}
+            value={value}
+            onValueChange={onValueChange}
+          />
+        }
       >
         <LaziedEditor
           value={value}

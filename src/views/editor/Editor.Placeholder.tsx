@@ -5,6 +5,7 @@ import { EditorProps } from "./interface";
 export interface PlaceholderEditorProps extends Omit<EditorProps, "onValueChange"> {
   "data-editor": "monaco" | "codemirror"
   onValueChange?: EditorProps["onValueChange"]
+  readOnly?: boolean
 }
 
 export const PlaceholderEditor = (p: PlaceholderEditorProps) => {
@@ -15,8 +16,12 @@ export const PlaceholderEditor = (p: PlaceholderEditorProps) => {
         width: "full",
         height: "full",
       }))}
-      readOnly
+      spellCheck={false}
+      autoComplete="false"
+      autoCorrect="false"
+      readOnly={p.readOnly}
       value={p.value}
+      onChange={e => p.onValueChange?.(e.currentTarget.value)}
     />
   )
 };
