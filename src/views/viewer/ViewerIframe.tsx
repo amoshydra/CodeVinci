@@ -3,7 +3,7 @@ import { createEsbuilderHtmlTemplate } from "../../utils/esbuilder.html";
 import { withCn } from "../../utils/tailwind";
 import { onErrorFunctionName } from "./common";
 import { MessageEventFrameMessage, OnFrameMessage } from "./interface";
-import iframeScript from "./ViewerIframeScript?url";
+import iframeScript from "./ViewerIframeScript?worker&url";
 
 export interface ViewerIframeProps extends HTMLAttributes<HTMLElement> {
   script: string;
