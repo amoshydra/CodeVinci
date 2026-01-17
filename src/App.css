@@ -6,7 +6,7 @@
 
 :root,
 body,
-body > * {
+body>* {
     height: 100%;
     overscroll-behavior-y: none;
 }
@@ -16,59 +16,70 @@ body > * {
     min-height: 0;
     grid-template-rows: 1fr min-content;
     grid-template-columns: min-content 1fr;
-    &[data-mode="edit"] {
+}
+
+.entry-content-grid[data-mode="edit"] {
+    grid-template-areas:
+        "sidebar editor"
+        "sidebar bottom"
+    ;
+}
+
+@media screen and (min-width: 1080px) {
+    .entry-content-grid[data-mode="edit"] {
         grid-template-areas:
             "sidebar editor"
             "sidebar bottom"
         ;
-        @media screen and (min-width: 1080px) {
-            grid-template-areas:
-                "sidebar editor"
-                "sidebar bottom"
-            ;
-        }
     }
-    &[data-mode="view"] {
-        grid-template-rows: 1fr;
-        grid-template-columns: 1fr;
+}
+
+.entry-content-grid[data-mode="view"] {
+    grid-template-rows: 1fr;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "viewer"
+    ;
+}
+
+.entry-content-grid[data-mode="view-edit"] {
+    grid-template-rows: 1fr 0 1fr min-content;
+    grid-template-columns: min-content 1fr min-content 1fr;
+    grid-template-areas:
+        "sidebar editor editor editor"
+        "sidebar divider divider divider"
+        "sidebar viewer viewer viewer"
+        "sidebar bottom bottom bottom"
+    ;
+}
+
+@media screen and (min-width: 1080px) {
+    .entry-content-grid[data-mode="view-edit"] {
         grid-template-areas:
-            "viewer"
+            "sidebar viewer divider editor"
+            "sidebar viewer divider editor"
+            "sidebar viewer divider editor"
+            "sidebar bottom bottom  bottom"
         ;
     }
+}
 
-    &[data-mode="view-edit"] {
-        grid-template-rows: 1fr 0 1fr min-content;
-        grid-template-columns: min-content 1fr min-content 1fr;
-        grid-template-areas:
-            "sidebar editor editor editor"
-            "sidebar divider divider divider"
-            "sidebar viewer viewer viewer"
-            "sidebar bottom bottom bottom"
-        ;
-        @media screen and (min-width: 1080px) {
-            grid-template-areas:
-                "sidebar viewer divider editor"
-                "sidebar viewer divider editor"
-                "sidebar viewer divider editor"
-                "sidebar bottom bottom  bottom"
-            ;
-        }
-    }
+.entry-content-grid>*[data-grid-area="sidebar"] {
+    grid-area: sidebar;
+}
 
+.entry-content-grid>*[data-grid-area="viewer"] {
+    grid-area: viewer;
+}
 
-    > *[data-grid-area="sidebar"] {
-        grid-area: sidebar;
-    }
-    > *[data-grid-area="viewer"] {
-        grid-area: viewer;
-    }
-    > *[data-grid-area="editor"] {
-        grid-area: editor;
-    }
-    > *[data-grid-area="divider"] {
-        grid-area: divider;
-    }
-    > *[data-grid-area="bottom"] {
-        grid-area: bottom;
-    }
+.entry-content-grid>*[data-grid-area="editor"] {
+    grid-area: editor;
+}
+
+.entry-content-grid>*[data-grid-area="divider"] {
+    grid-area: divider;
+}
+
+.entry-content-grid>*[data-grid-area="bottom"] {
+    grid-area: bottom;
 }
