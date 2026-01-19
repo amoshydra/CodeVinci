@@ -10,7 +10,7 @@ body>* {
     height: 100%;
     overscroll-behavior-y: none;
 }
-.cm-html-string * {
+.cm-html-string {
     color: #dcdcdc;
 }
 .cm-tag-name > * {
@@ -24,6 +24,21 @@ body>* {
 }
 .cm-bracket > * {
     color: #808080;
+}
+.cm-selector > * {
+    color: #d7ba7d;
+}
+.cm-property-name > * {
+    color: #9cdcfe;
+}
+.cm-property-value > * {
+    color: #ce9178;
+}
+.cm-comment > * {
+    color: #6a9955;
+}
+.cm-keyword > * {
+    color: #c586c0;
 }
 
 :root,

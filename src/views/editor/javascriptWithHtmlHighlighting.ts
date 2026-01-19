@@ -1,6 +1,7 @@
 import { Decoration, DecorationSet, EditorView, ViewPlugin } from '@codemirror/view';
 import { parser as jsParser } from '@lezer/javascript';
 import { parser as htmlParser } from '@lezer/html';
+import { parser as cssParser } from '@lezer/css';
 
 const htmlStringDecoration = Decoration.mark({
   class: 'cm-html-string',
@@ -20,6 +21,26 @@ const htmlAttributeValueDecoration = Decoration.mark({
 
 const htmlBracketDecoration = Decoration.mark({
   class: 'cm-bracket',
+});
+
+const cssSelectorDecoration = Decoration.mark({
+  class: 'cm-selector',
+});
+
+const cssPropertyNameDecoration = Decoration.mark({
+  class: 'cm-property-name',
+});
+
+const cssPropertyValueDecoration = Decoration.mark({
+  class: 'cm-property-value',
+});
+
+const cssCommentDecoration = Decoration.mark({
+  class: 'cm-comment',
+});
+
+const cssImportantDecoration = Decoration.mark({
+  class: 'cm-keyword',
 });
 
 const insertAdjacentHTMLHighlighter = ViewPlugin.fromClass(class {
@@ -73,10 +94,39 @@ const insertAdjacentHTMLHighlighter = ViewPlugin.fromClass(class {
           }
         };
 
+        const processCssNode = (offset: number, nodeName: string, nodeFrom: number, nodeTo: number) => {
+          const cssFrom = from + 1 + offset + nodeFrom;
+          const cssTo = from + 1 + offset + nodeTo;
+
+          if (nodeName === "TagName" || nodeName === "ClassName" || nodeName === "IdName") {
+            builder.push(cssSelectorDecoration.range(cssFrom, cssTo));
+          } else if (nodeName === "PropertyName") {
+            builder.push(cssPropertyNameDecoration.range(cssFrom, cssTo));
+          } else if (["ValueName", "ColorLiteral", "NumberLiteral", "StringLiteral", "VariableName", "CallLiteral"].includes(nodeName)) {
+            builder.push(cssPropertyValueDecoration.range(cssFrom, cssTo));
+          } else if (nodeName === "Comment") {
+            builder.push(cssCommentDecoration.range(cssFrom, cssTo));
+          } else if (nodeName === "Important") {
+            builder.push(cssImportantDecoration.range(cssFrom, cssTo));
+          } else if (nodeName === "AtKeyword") {
+            builder.push(cssImportantDecoration.range(cssFrom, cssTo));
+          }
+        };
+
         const traverseHtml = () => {
           const currentCursor = cursor;
+
           while (currentCursor.next()) {
+            const nodeText = htmlContent.slice(currentCursor.from, currentCursor.to);
             processHtmlNode(currentCursor.name, currentCursor.from, currentCursor.to);
+
+            if (currentCursor.name === "StyleText") {
+              const cssTree = cssParser.parse(nodeText);
+              const cssCursor = cssTree.cursor();
+              while (cssCursor.next()) {
+                processCssNode(currentCursor.from, cssCursor.name, cssCursor.from, cssCursor.to);
+              }
+            }
           }
         };
 
