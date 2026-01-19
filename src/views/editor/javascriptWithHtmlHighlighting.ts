@@ -1,8 +1,25 @@
 import { Decoration, DecorationSet, EditorView, ViewPlugin } from '@codemirror/view';
 import { parser as jsParser } from '@lezer/javascript';
+import { parser as htmlParser } from '@lezer/html';
 
 const htmlStringDecoration = Decoration.mark({
   class: 'cm-html-string',
+});
+
+const htmlTagNameDecoration = Decoration.mark({
+  class: 'cm-tag-name',
+});
+
+const htmlAttributeNameDecoration = Decoration.mark({
+  class: 'cm-attribute-name',
+});
+
+const htmlAttributeValueDecoration = Decoration.mark({
+  class: 'cm-attribute-value',
+});
+
+const htmlBracketDecoration = Decoration.mark({
+  class: 'cm-bracket',
 });
 
 const insertAdjacentHTMLHighlighter = ViewPlugin.fromClass(class {
@@ -19,7 +36,7 @@ const insertAdjacentHTMLHighlighter = ViewPlugin.fromClass(class {
   }
 
   getDecorations(view: EditorView): DecorationSet {
-    const builder: any[] = [];
+    const builder: { from: number; to: number; value: Decoration }[] = [];
     const tree = jsParser.parse(view.state.doc.toString());
     const docContent = view.state.doc.toString();
 
@@ -35,8 +52,35 @@ const insertAdjacentHTMLHighlighter = ViewPlugin.fromClass(class {
       (name) => name === "String",
       (name) => name === ",",
       (_name, _text, { to, from }) => {
+        const htmlContent = docContent.slice(from + 1, to - 1);
         builder.push(htmlStringDecoration.range(from + 1, to - 1));
-        // process node, then return false to end the chain;
+
+        const htmlTree = htmlParser.parse(htmlContent);
+        const cursor = htmlTree.cursor();
+
+        const processHtmlNode = (nodeName: string, nodeFrom: number, nodeTo: number) => {
+          const htmlFrom = from + 1 + nodeFrom;
+          const htmlTo = from + 1 + nodeTo;
+
+          if (nodeName === "TagName") {
+            builder.push(htmlTagNameDecoration.range(htmlFrom, htmlTo));
+          } else if (nodeName === "AttributeName") {
+            builder.push(htmlAttributeNameDecoration.range(htmlFrom, htmlTo));
+          } else if (nodeName === "AttributeValue") {
+            builder.push(htmlAttributeValueDecoration.range(htmlFrom, htmlTo));
+          } else if (["StartTag","EndTag","CloseTag","StartCloseTag","EndTag"].includes(nodeName)) {
+            builder.push(htmlBracketDecoration.range(htmlFrom, htmlTo));
+          }
+        };
+
+        const traverseHtml = () => {
+          const currentCursor = cursor;
+          while (currentCursor.next()) {
+            processHtmlNode(currentCursor.name, currentCursor.from, currentCursor.to);
+          }
+        };
+
+        traverseHtml();
         return false;
       }
     ];
