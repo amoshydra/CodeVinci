@@ -10,8 +10,8 @@ body>* {
     height: 100%;
     overscroll-behavior-y: none;
 }
-.cm-html-string {
-    color: #dcdcdc;
+.cm-html-string * {
+    color: #d4d4d4;
 }
 .cm-tag-name > * {
     color: #569cd6;
@@ -38,7 +38,7 @@ body>* {
     color: #6a9955;
 }
 .cm-keyword > * {
-    color: #c586c0;
+    color: #569cd6;
 }
 
 :root,

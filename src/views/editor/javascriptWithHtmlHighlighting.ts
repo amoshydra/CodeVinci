@@ -98,17 +98,15 @@ const insertAdjacentHTMLHighlighter = ViewPlugin.fromClass(class {
           const cssFrom = from + 1 + offset + nodeFrom;
           const cssTo = from + 1 + offset + nodeTo;
 
-          if (nodeName === "TagName" || nodeName === "ClassName" || nodeName === "IdName") {
+          if (["TagName", "ClassName", "IdName", "identifier", "VariableName", "LayerName", "KeyframeName", "FeatureName", "queryIdentifier"].includes(nodeName)) {
             builder.push(cssSelectorDecoration.range(cssFrom, cssTo));
           } else if (nodeName === "PropertyName") {
             builder.push(cssPropertyNameDecoration.range(cssFrom, cssTo));
-          } else if (["ValueName", "ColorLiteral", "NumberLiteral", "StringLiteral", "VariableName", "CallLiteral"].includes(nodeName)) {
+          } else if (["ValueName", "ColorLiteral", "NumberLiteral", "StringLiteral", "CallLiteral"].includes(nodeName)) {
             builder.push(cssPropertyValueDecoration.range(cssFrom, cssTo));
           } else if (nodeName === "Comment") {
             builder.push(cssCommentDecoration.range(cssFrom, cssTo));
-          } else if (nodeName === "Important") {
-            builder.push(cssImportantDecoration.range(cssFrom, cssTo));
-          } else if (nodeName === "AtKeyword") {
+          } else if (["Important", "AtKeyword"].includes(nodeName)) {
             builder.push(cssImportantDecoration.range(cssFrom, cssTo));
           }
         };
