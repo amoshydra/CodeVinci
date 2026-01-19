@@ -13,9 +13,9 @@ const editorPreference = ((): "monaco" | "codemirror" => {
 })();
 
 const getPreferredEditor = async () => {
-  if (editorPreference === "monaco") {
-    return (await import("./Editor.Monaco")).MonacoEditor;
-  }
+  // if (editorPreference === "monaco") {
+  //   return (await import("./Editor.Monaco")).MonacoEditor;
+  // }
   return (await import("./Editor.CodeMirror")).CodeMirrorEditor
 }
 // start fetching editor as this module load
