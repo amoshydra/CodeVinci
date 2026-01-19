@@ -1,8 +1,9 @@
-import { javascript } from '@codemirror/lang-javascript';
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import CodeMirror from '@uiw/react-codemirror';
 import { css } from '../../../styled-system/css';
 import { EditorProps } from './interface';
+import { javascriptWithHtmlHighlighting } from './javascriptWithHtmlHighlighting';
+import { javascript } from '@codemirror/lang-javascript';
 
 export const CodeMirrorEditor = ({ value, onValueChange }: EditorProps) => {
   return (
@@ -21,4 +22,5 @@ export const CodeMirrorEditor = ({ value, onValueChange }: EditorProps) => {
 
 const extensions = [
   javascript({ jsx: true }),
+  javascriptWithHtmlHighlighting(),
 ];

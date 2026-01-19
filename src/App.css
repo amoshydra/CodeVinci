@@ -10,3 +10,18 @@ body>* {
     height: 100%;
     overscroll-behavior-y: none;
 }
+
+.cm-html-string {
+    color: #ce9178;
+}
+
+:root,
+body,
+body>* {
+    height: 100%;
+    overscroll-behavior-y: none;
+}
+
+.cm-html-string * {
+    color: red;
+}
