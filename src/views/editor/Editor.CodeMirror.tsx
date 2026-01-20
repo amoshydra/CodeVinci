@@ -5,7 +5,7 @@ import { EditorProps } from './interface';
 import { javascriptWithHtmlHighlighting } from './javascriptWithHtmlHighlighting';
 import { javascript } from '@codemirror/lang-javascript';
 
-export const CodeMirrorEditor = ({ value, onValueChange }: EditorProps) => {
+export const CodeMirrorEditor = ({ value, onValueChange, readOnly }: EditorProps) => {
   return (
     <CodeMirror
       height="100%"
@@ -14,6 +14,7 @@ export const CodeMirrorEditor = ({ value, onValueChange }: EditorProps) => {
       })}
       value={value}
       onChange={onValueChange}
+      editable={!readOnly}
       extensions={extensions}
       theme={vscodeDark}
     />

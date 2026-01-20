@@ -1,6 +1,13 @@
 import { Flex, Stack, styled } from '../../../styled-system/jsx';
 import { AppTopBar } from '../../components/AppTopBar';
 import { BrandLogoButton } from '../../components/BrandLogoButton';
+import { lazy, Suspense } from 'react';
+import { PlaceholderEditor } from '../editor/Editor.Placeholder';
+
+const getCodeMirrorPromise = import('../editor/Editor.CodeMirror')
+  .then(module => ({ default: module.CodeMirrorEditor }));
+
+const LazyCodeMirror = lazy(() => getCodeMirrorPromise);
 
 export interface DisclaimerProps {
   code: string;
@@ -23,7 +30,18 @@ export const Disclaimer = ({ code, onAcceptRun, onAcceptEdit }: DisclaimerProps)
         </styled.span>
       </Alert>
 
-      <CodeBlock>{code}</CodeBlock>
+      <CodeBlock>
+        <Suspense
+          fallback={
+            <PlaceholderEditor
+              value={code}
+              data-editor="codemirror"
+            />
+          }
+        >
+          <LazyCodeMirror value={code} onValueChange={() => {}} readOnly={true} />
+        </Suspense>
+      </CodeBlock>
 
       <Flex justify="flex-end" gap="4">
         <ActionButton visual="secondary" onClick={onAcceptEdit}>
@@ -51,15 +69,13 @@ const Alert = styled('div', {
   },
 });
 
-const CodeBlock = styled('pre', {
+const CodeBlock = styled('div', {
   base: {
-    p: '6',
+    height: 'calc(100vh - 24rem)',
     border: '2px solid',
     borderColor: 'gray.200',
-    overflow: 'auto',
-    fontFamily: 'mono',
-    fontSize: 'sm',
-    color: "slate.200",
+    overflow: 'hidden',
+    borderRadius: 'md',
   },
 });
 
