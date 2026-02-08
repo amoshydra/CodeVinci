@@ -13,10 +13,14 @@ const get = (property: string): string | null => {
   return value;
 };
 
-const set = (property: string, value: string) => {
+const set = (property: string, value: string | null | undefined) => {
   // Prepare params
   const params = getHashAsParams();
-  params.set(property, value);
+  if (value == null) {
+    params.delete(property);
+  } else {
+    params.set(property, value);
+  }
 
   // Construct URL
   const url = new URL(window.location.href);

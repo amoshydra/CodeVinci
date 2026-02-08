@@ -25,7 +25,8 @@ export const DisclaimerForExternalLoad = ({ onLoadAccept, externalValue }: Discl
     try {
       if (typeof parsedUrl === "string") {
         const code = await fetchCodeFromUrl(parsedUrl);
-        onLoadAccept(code);
+        const augmented = [`// @from: ${parsedUrl}`, code].join("\n")
+        onLoadAccept(augmented);
       } else {
         setError(new Error("URL is empty"));
       }

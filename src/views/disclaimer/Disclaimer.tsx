@@ -6,6 +6,8 @@ import { BrandLogoButton } from '../../components/BrandLogoButton';
 import { PlaceholderEditor } from '../editor/Editor.Placeholder';
 import { DisclaimerForExternalLoad } from './Disclaimer.ExternalLoad';
 import { externalLoadQueryValue } from './externalLoadValue.service';
+import { hashParams } from '../../utils/hashParams';
+import { QUERY_PROPERTY_EXTERNAL } from '../../constants/query';
 
 const getCodeMirrorPromise = import('../editor/Editor.CodeMirror')
   .then(module => ({ default: module.CodeMirrorEditor }));
@@ -45,6 +47,7 @@ export const Disclaimer = ({ code, onAcceptRun, onAcceptEdit, onAcceptExternalLo
                 onLoadAccept={(code) => {
                   setShowExternalLoadDisclaimer(false);
                   onAcceptExternalLoad(code);
+                  hashParams.set(QUERY_PROPERTY_EXTERNAL, null);
                 }}
               />
             ) : (
