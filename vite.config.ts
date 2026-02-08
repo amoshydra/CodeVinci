@@ -18,4 +18,12 @@ export default defineConfig({
     }),
     react(),
   ],
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        loader: path.resolve(__dirname, "loader.html"),
+      },
+    },
+  },
 });
