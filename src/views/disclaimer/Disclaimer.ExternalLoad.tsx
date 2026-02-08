@@ -125,7 +125,7 @@ const parseUrl = (urlString: string | null) => {
 
 const UrlPreviewer = styled("pre", {
   base: {
-    wordWrap: "break-word",
+    wordBreak: "break-word",
     whiteSpace: "pre-wrap",
     border: "1px solid",
     borderColor: "red.900",
