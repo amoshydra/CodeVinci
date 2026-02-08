@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=overlays-content">
+        <meta name="theme-color" content="#0c0a09" />
+        <title>CodeVinci - Loader</title>
+        <style>
+            body {
+                color: var(--color-fg);
+                background-color: var(--color-bg);
+
+                color-scheme: light dark;
+                --color-fg: #0c0a09;
+                --color-bg: white;
+            }
+            @media (prefers-color-scheme: dark) {
+                body {
+                    --color-fg: white;
+                    --color-bg: #0c0a09;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <noscript>
+            <div style="padding: 1rem; font-family: sans-serif">
+                JavaScript is required to run this app.
+                <br /><br />
+                Project: <a href="https://github.com/amoshydra/CodeVinci">amoshydra/CodeVinci</a>
+            </div>
+        </noscript>
+        <div id="root"></div>
+        <script type="module" src="/src/main.loader.tsx"></script>
+    </body>
+</html>

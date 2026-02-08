@@ -29,7 +29,7 @@ const getPreferredEditorPromise = getPreferredEditor()
   })
   ;
 
-export const Editor = ({ value, onValueChange, ...props }: EditorProps) => {
+export const Editor = ({ value, onValueChange, readOnly, extensions, ...props }: EditorProps) => {
   return (
     <div {...withCn(props, css({ overflowY: "hidden" }))}>
       <Suspense
@@ -38,12 +38,15 @@ export const Editor = ({ value, onValueChange, ...props }: EditorProps) => {
             data-editor={editorPreference}
             value={value}
             onValueChange={onValueChange}
+            readOnly={readOnly}
           />
         }
       >
         <LaziedEditor
           value={value}
           onValueChange={onValueChange}
+          extensions={extensions}
+          readOnly={readOnly}
         />
       </Suspense>
     </div>
