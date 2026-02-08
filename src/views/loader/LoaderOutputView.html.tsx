@@ -75,11 +75,11 @@ function convertHtmlToEsm(htmlInput: string) {
 
   // 1. Parse Import Map
   const importMapScript = doc.querySelector('script[type="importmap"]');
-  const importMap = importMapScript ? JSON.parse(importMapScript.textContent).imports : {};
+  const importMap = importMapScript ? JSON.parse(importMapScript.textContent || "{}").imports : {};
 
   // 2. Aggregate Styles
   const styleContent = Array.from(doc.querySelectorAll('style'))
-    .map(s => s.textContent.trim())
+    .map(s => (s.textContent || "").trim())
     .join('\n')
   ;
 
@@ -95,7 +95,7 @@ function convertHtmlToEsm(htmlInput: string) {
   let allLogic: string[] = [];
 
   moduleScripts.forEach(script => {
-    let code = script.textContent.trim();
+    let code = (script.textContent || "").trim();
 
     // Resolve aliases based on the Import Map
     // In a true AST environment, we'd use: babel.transform(code, { plugins: [rewriteImports] })

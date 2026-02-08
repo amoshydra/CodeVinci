@@ -1,6 +1,6 @@
 .placeholderEditor[data-editor="codemirror"] {
   padding-top: 4px;
-  //padding-left: 44.8px;
+  /*padding-left: 44.8px;*/
   padding-left: 3.4rem;
   font-size: 16px;
   font-family: Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace;
