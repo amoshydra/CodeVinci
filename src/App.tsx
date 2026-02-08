@@ -21,6 +21,9 @@ function App() {
         onAcceptEdit={() => {
           setCode(toggleComment(code));
         }}
+        onAcceptExternalLoad={(externalCode) => {
+          setCode(externalCode);
+        }}
       />
     );
   }

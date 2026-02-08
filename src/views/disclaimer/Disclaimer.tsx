@@ -1,8 +1,11 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Flex, Stack, styled } from '../../../styled-system/jsx';
+import { ActionButton } from '../../components/ActionButton';
 import { AppTopBar } from '../../components/AppTopBar';
 import { BrandLogoButton } from '../../components/BrandLogoButton';
 import { PlaceholderEditor } from '../editor/Editor.Placeholder';
+import { DisclaimerForExternalLoad } from './Disclaimer.ExternalLoad';
+import { externalLoadQueryValue } from './externalLoadValue.service';
 
 const getCodeMirrorPromise = import('../editor/Editor.CodeMirror')
   .then(module => ({ default: module.CodeMirrorEditor }));
@@ -13,9 +16,13 @@ export interface DisclaimerProps {
   code: string;
   onAcceptRun: () => void;
   onAcceptEdit: () => void;
+  onAcceptExternalLoad: (code: string) => void;
 }
 
-export const Disclaimer = ({ code, onAcceptRun, onAcceptEdit }: DisclaimerProps) => {
+export const Disclaimer = ({ code, onAcceptRun, onAcceptEdit, onAcceptExternalLoad }: DisclaimerProps) => {
+  const externalValue = externalLoadQueryValue;
+  const [showExternalLoadDisclaimer, setShowExternalLoadDisclaimer] = useState(!!externalValue);
+
   return (
     <>
       <AppTopBar>
@@ -30,27 +37,43 @@ export const Disclaimer = ({ code, onAcceptRun, onAcceptEdit }: DisclaimerProps)
           </styled.span>
         </Alert>
 
-        <CodeBlock>
-          <Suspense
-            fallback={
-              <PlaceholderEditor
-                value={code}
-                data-editor="codemirror"
+        {
+          showExternalLoadDisclaimer
+            ? (
+              <DisclaimerForExternalLoad
+                externalValue={externalValue as NonNullable<typeof externalValue>}
+                onLoadAccept={(code) => {
+                  setShowExternalLoadDisclaimer(false);
+                  onAcceptExternalLoad(code);
+                }}
               />
-            }
-          >
-            <LazyCodeMirror value={code} onValueChange={() => {}} readOnly={true} />
-          </Suspense>
-        </CodeBlock>
+            ) : (
+              <>
+                <CodeBlock>
+                  <Suspense
+                    fallback={
+                      <PlaceholderEditor
+                        value={code}
+                        data-editor="codemirror"
+                      />
+                    }
+                  >
+                    <LazyCodeMirror value={code} onValueChange={() => {}} readOnly={true} />
+                  </Suspense>
+                </CodeBlock>
 
-        <Flex justify="flex-end" gap="4">
-          <ActionButton visual="secondary" onClick={onAcceptEdit}>
-            Comment before run
-          </ActionButton>
-          <ActionButton visual="primary" onClick={onAcceptRun}>
-            Run code
-          </ActionButton>
-        </Flex>
+                <Flex justify="flex-end" gap="4">
+                  <ActionButton visual="secondary" onClick={onAcceptEdit}>
+                    Comment before run
+                  </ActionButton>
+                  <ActionButton visual="primary" onClick={onAcceptRun}>
+                    Run code
+                  </ActionButton>
+                </Flex>
+              </>
+            )
+        }
+
       </Stack>
     </>
   );
@@ -76,22 +99,5 @@ const CodeBlock = styled('div', {
     borderColor: 'gray.200',
     overflow: 'hidden',
     borderRadius: 'md',
-  },
-});
-
-const ActionButton = styled('button', {
-  base: {
-    fontWeight: 'bold',
-    py: '2',
-    px: '4',
-    rounded: 'md',
-    cursor: 'pointer',
-    transition: 'background 0.2s',
-  },
-  variants: {
-    visual: {
-      primary: { bg: 'blue.500', color: 'white', _hover: { bg: 'blue.700' } },
-      secondary: { bg: 'slate.100', color: 'slate.700', border: '1px solid', borderColor: 'slate.300', _hover: { bg: 'slate.300' } },
-    },
   },
 });
