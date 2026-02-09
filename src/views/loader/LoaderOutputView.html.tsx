@@ -92,7 +92,7 @@ function convertHtmlToEsm(htmlInput: string) {
   const bodyContent = bodyClone.innerHTML.trim();
 
   // 4. Process all Module Scripts
-  const moduleScripts = Array.from(doc.querySelectorAll('script[type="module"]'));
+  const moduleScripts = Array.from(doc.querySelectorAll('script:not([type="importmap"])'));
   let allImports = new Set();
   let allLogic: string[] = [];
 
