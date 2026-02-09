@@ -54,10 +54,8 @@ const useOutputBase64 = (newHtmlOutput: string) => {
     Promise.resolve()
       .then(async () => {
         const compressed = await compress(newHtmlOutput);
-        console.log({ aborted });
         if (aborted) return;
         const base64String = arrayBufferToBase64(compressed);
-        console.log(base64String);
         setBase64(base64String);
       })
       .finally(() => {
