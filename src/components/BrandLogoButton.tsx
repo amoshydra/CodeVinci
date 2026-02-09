@@ -1,5 +1,6 @@
 import { HTMLProps, useState } from "react";
 import { css } from "../../styled-system/css";
+import { ActionButtonLink } from "./ActionButton";
 import { Dialog } from "./Dialog";
 
 export interface BrandLogoButton extends HTMLProps<HTMLButtonElement> {
@@ -68,6 +69,20 @@ export const BrandLogoButton = () => {
                 GitHub: amoshydra/CodeVinci
               </span>
             </a>
+
+            <div className={css({ marginTop: 24, display: "grid", rowGap: 4 })}>
+              <h2 className={css({ fontWeight: "bold" })}>Others</h2>
+              <div className={css({ display: "flex", gap: 2, })}>
+                <ActionButtonLink
+                  href={`${import.meta.env.BASE_URL}`}
+                  size="sm"
+                >Home</ActionButtonLink>
+                <ActionButtonLink
+                  href={`${import.meta.env.BASE_URL}loader`}
+                  size="sm"
+                >Loader</ActionButtonLink>
+              </div>
+            </div>
           </p>
         </div>
       </Dialog>

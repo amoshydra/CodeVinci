@@ -1,6 +1,6 @@
 import { styled } from "../../styled-system/jsx";
 
-export const ActionButton = styled('button', {
+const BaseCommonButtonStyle = {
   base: {
     fontWeight: 'bold',
     rounded: 'md',
@@ -68,4 +68,7 @@ export const ActionButton = styled('button', {
       },
     },
   },
-});
+}
+
+export const ActionButton = styled('button', BaseCommonButtonStyle);
+export const ActionButtonLink = styled('a', BaseCommonButtonStyle);
