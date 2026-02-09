@@ -26,7 +26,9 @@ export const LoaderOutputViewHtml = ({ value }: LoaderOutputViewProps) => {
   const href = useOutputLink(base64, QUERY_PROPERTY_VALUE);
 
   return (
-    <div>
+    <div
+      className={css({ minWidth: 0 })}
+    >
       <LinkOutputView
         fallbackMessage="Unable to parse the given HTML"
         href={href}
