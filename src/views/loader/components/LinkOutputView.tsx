@@ -27,6 +27,12 @@ export const LinkOutputView = ({ isValid, href, fallbackMessage }: LinkOutputVie
       >
         <Base64AnchorLink
           href={href}
+          onClick={() => {
+            // clear session storage on click
+            // prevent next session's code from being
+            // evaluated on load
+            sessionStorage.clear();
+          }}
         >{href}</Base64AnchorLink>
       </div>
     </Wrapper>
