@@ -78,7 +78,7 @@ export const BrandLogoButton = () => {
                   size="sm"
                 >Home</ActionButtonLink>
                 <ActionButtonLink
-                  href={`${import.meta.env.BASE_URL}loader`}
+                  href={`${import.meta.env.BASE_URL}/loader`.replace(/\/+/g, "/")}
                   size="sm"
                 >Loader</ActionButtonLink>
               </div>
