@@ -1,6 +1,7 @@
 import { styled } from "../../styled-system/jsx";
+import { cva } from "../../styled-system/css";
 
-const BaseCommonButtonStyle = {
+const buttonRecipe = cva({
   base: {
     fontWeight: 'bold',
     rounded: 'md',
@@ -41,7 +42,7 @@ const BaseCommonButtonStyle = {
     visual: {
       primary: {
         bg: 'blue.500', color: 'white',
-        border: "1px solid transparent",
+        border: "1px solid blue.600",
         _hover: {
           bg: 'blue.700'
         },
@@ -68,7 +69,7 @@ const BaseCommonButtonStyle = {
       },
     },
   },
-}
+});
 
-export const ActionButton = styled('button', BaseCommonButtonStyle);
-export const ActionButtonLink = styled('a', BaseCommonButtonStyle);
+export const ActionButton = styled('button', buttonRecipe);
+export const ActionButtonLink = styled('a', buttonRecipe);
