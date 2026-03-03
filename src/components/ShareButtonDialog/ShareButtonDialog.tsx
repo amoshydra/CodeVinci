@@ -2,6 +2,7 @@ import { ReactNode, useId } from "react";
 import { css } from "../../../styled-system/css";
 import { ActionButton } from "../ActionButton";
 import { Dialog, type DialogProps } from "../Dialog";
+import { ShareButtonDialogQrBox } from "./ShareButtonDialogQrBox";
 
 export interface ShareButtonDialogProps extends Omit<DialogProps, "id" | "children" | "title"> {};
 
@@ -35,7 +36,10 @@ export const ShareButtonDialog = (props: ShareButtonDialogProps) => {
           gap: "4",
         })}
       >
-        <QrBox />
+        <ShareButtonDialogQrBox
+          value={shareUrl}
+          visible={props.isOpen}
+        />
 
         <ShareInputBox value={shareUrl} />
 
@@ -77,22 +81,6 @@ const ShareInputBox = ({ value }: { value: string }) => {
     />
   );
 }
-
-const QrBox = () => {
-  return (
-    <button
-      className={css({
-        background: "slate.800",
-        width: "full",
-        height: "full",
-        aspectRatio: "1 / 1",
-        borderRadius: "md",
-      })}
-    >
-      Click to generate QR
-    </button>
-  );
-};
 
 const PressToggleSpan = ({ idleNode, activeNode }: { idleNode: ReactNode, activeNode: ReactNode }) => {
   return <span
