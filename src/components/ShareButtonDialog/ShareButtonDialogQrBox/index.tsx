@@ -1,12 +1,11 @@
 import { lazy, Suspense } from "react";
 import { css } from "../../../../styled-system/css";
+import { ErrorBoundary } from "../../ErrorBoundary";
 import { ShareButtonDialogQrBoxProps } from "./interface";
 
 const QRCodeCanvas = lazy(() => import('qrcode.react').then(m => ({ default: m.QRCodeCanvas })));
 
-export const ShareButtonDialogQrBox = ({ value, visible }: ShareButtonDialogQrBoxProps) => {
-  if (!visible) return;
-
+export const ShareButtonDialogQrBox = ({ value }: ShareButtonDialogQrBoxProps) => {
   return (
     <div
       className={css({
@@ -25,15 +24,26 @@ export const ShareButtonDialogQrBox = ({ value, visible }: ShareButtonDialogQrBo
       })}
     >
       <Suspense fallback={<div className={css({ color: "white" })}>Loading...</div>}>
-        <QRCodeCanvas
-          value={value}
-          level="L"
-          size={window.innerWidth}
-          className={css({
-            padding: '1.5',
-            background: "white",
-          })}
-        />
+        <ErrorBoundary
+          key={value.length}
+          fallback={(error) => (
+            <div className={css({ color: "red.400", textAlign: "center" })}>
+              Failed to generate QR code
+              <br />
+              {error.message}
+            </div>
+          )}
+        >
+          <QRCodeCanvas
+            value={value}
+            level="L"
+            size={window.innerWidth}
+            className={css({
+              padding: '1.5',
+              background: "white",
+            })}
+          />
+        </ErrorBoundary>
       </Suspense>
     </div>
   );
