@@ -1,7 +1,9 @@
-import { HTMLProps } from "react";
-import { css } from "../../../styled-system/css";
+import { ButtonHTMLAttributes, HTMLProps, useState } from "react";
+import { css, cx } from "../../../styled-system/css";
+import { ActionButton } from "../../components/ActionButton";
 import { AppTopBar } from "../../components/AppTopBar";
 import { BrandLogoButton } from "../../components/BrandLogoButton";
+import { ShareButtonDialog } from "../../components/ShareButtonDialog/ShareButtonDialog";
 import { SettingsMode } from "../../services/settings";
 
 export interface TopBarProps extends HTMLProps<HTMLDivElement> {
@@ -14,24 +16,30 @@ export const TopBar = (props: TopBarProps) => {
     <AppTopBar>
       <BrandLogoButton />
       <div>
+        <ShareButton
+          className={cssNavbarButton}
+        >Share</ShareButton>
+
         <select
           value={props.viewMode}
           onChange={e => {
             const value = e.currentTarget.value;
             props.onViewModeChange(value as SettingsMode);
           }}
-          className={css({
-            fieldSizing: "content",
-            maxWidth: "15ch",
-            fontFamily: "mono",
-            textAlign: 'right',
-            fontSize: "sm",
-            padding: 2,
-            letterSpacing: -0.125,
-            "@supports (field-sizing: content)": {
-              maxWidth: "auto",
-            }
-          })}
+          className={
+            cx(
+              cssNavbarButton,
+              css({
+                fieldSizing: "content",
+                maxWidth: "15ch",
+                textAlign: 'right',
+                padding: 2,
+                "@supports (field-sizing: content)": {
+                  maxWidth: "auto",
+                }
+              })
+            )
+          }
         >
           <option disabled>Select mode</option>
           <option value="view-edit">View & Edit</option>
@@ -43,3 +51,36 @@ export const TopBar = (props: TopBarProps) => {
     </AppTopBar>
   );
 };
+
+
+const cssNavbarButton = css({
+  fontFamily: "mono",
+  fontSize: "sm",
+  letterSpacing: -0.125,
+  fontWeight: "medium",
+});
+
+const ShareButton = (props: ButtonHTMLAttributes<HTMLButtonElement>) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <ActionButton
+        {...props}
+        size="sm"
+        onClick={(e) => {
+          props.onClick?.(e)
+          setIsOpen(true);
+        }}
+        outline={false}
+        aria-pressed={isOpen}
+      />
+      <ShareButtonDialog
+        isOpen={isOpen}
+        onClose={() => {
+          setIsOpen(false)
+        }}
+      />
+    </>
+  )
+}

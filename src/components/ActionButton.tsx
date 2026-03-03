@@ -1,5 +1,5 @@
-import { styled } from "../../styled-system/jsx";
 import { cva } from "../../styled-system/css";
+import { styled } from "../../styled-system/jsx";
 
 const buttonRecipe = cva({
   base: {
@@ -10,7 +10,12 @@ const buttonRecipe = cva({
     border: "1px solid white",
     py: '2',
     px: '4',
-    _hover: {
+    "@media (hover: hover)": {
+      _hover: {
+        bg: 'slate.800'
+      },
+    },
+    _active: {
       bg: 'slate.800'
     },
     _disabled: {
@@ -39,12 +44,19 @@ const buttonRecipe = cva({
         fontSize: "lg",
       },
     },
+    outline: {
+      false: {
+        borderColor: "transparent",
+      }
+    },
     visual: {
       primary: {
         bg: 'blue.500', color: 'white',
         border: "1px solid blue.600",
-        _hover: {
-          bg: 'blue.700'
+        "@media (hover: hover)": {
+          _hover: {
+            bg: 'blue.700'
+          },
         },
         _disabled: {
           color:'slate.500',
@@ -59,8 +71,10 @@ const buttonRecipe = cva({
         color: 'slate.700',
         border: '1px solid',
         borderColor: 'slate.300',
-        _hover: {
-          bg: 'slate.300'
+        "@media (hover: hover)": {
+          _hover: {
+            bg: 'slate.300'
+          },
         },
         _disabled: {
           color:'slate.900',
