@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { css } from "../../../styled-system/css";
 import { ActionButton } from "../../components/ActionButton";
 import { ChatBubble, SettingsGear, SendArrow } from "../../components/Icons";
@@ -211,16 +211,20 @@ const LLMPanel = ({
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
               lineHeight: '1.5',
-              fontFamily: msg.role === 'assistant' ? 'mono' : 'inherit',
-              fontSize: msg.role === 'assistant' ? 'xs' : 'sm',
+              fontFamily: msg.role === 'assistant' ? 'inherit' : 'inherit',
+              fontSize: 'sm',
             })}>
-              {msg.role === 'user' ? msg.content : formatOutput(msg.content)}
+              {msg.role === 'user' ? msg.content : renderResponse(msg.content)}
             </div>
           </div>
         ))}
 
         {streamingText && (
-          <div className={css({ py: '2' })}>
+          <div className={css({
+            py: '2',
+            borderTop: messages.length > 0 ? '1px solid' : 'none',
+            borderColor: 'stone.800',
+          })}>
             <div className={css({
               fontSize: 'xs',
               color: 'stone.500',
@@ -229,16 +233,20 @@ const LLMPanel = ({
               letterSpacing: '0.02em',
             })}>
               AI
+              <span className={css({
+                ml: '1.5',
+                color: 'amber.400',
+                fontSize: 'xs',
+              })}>streaming...</span>
             </div>
             <div className={css({
-              fontSize: 'xs',
+              fontSize: 'sm',
               color: 'stone.300',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
               lineHeight: '1.5',
-              fontFamily: 'mono',
             })}>
-              {formatOutput(streamingText)}
+              {renderStreaming(streamingText)}
             </div>
           </div>
         )}
@@ -277,7 +285,7 @@ const LLMPanel = ({
               overflowY: 'auto',
               mb: '2',
             })}>
-              {formatOutput(pendingCode.slice(0, 1000))}
+              {escapeHtml(pendingCode.slice(0, 1000))}
               {pendingCode.length > 1000 && (
                 <span className={css({ color: 'stone.500' })}>
                   {'\n'}... ({pendingCode.length - 1000} more chars)
@@ -408,11 +416,86 @@ const LLMPanel = ({
   );
 };
 
-function formatOutput(text: string): string {
+function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+function renderResponse(text: string): ReactNode[] {
+  return splitCodeBlocks(escapeHtml(text)).map((part, i) => {
+    if (part.type === 'code') {
+      return (
+        <pre key={i} className={css({
+          bg: 'stone.950',
+          p: '2',
+          my: '1.5',
+          borderRadius: 'md',
+          overflowX: 'auto',
+          fontSize: 'xs',
+          fontFamily: 'mono',
+          color: 'stone.200',
+          lineHeight: '1.4',
+        })}>{part.content}</pre>
+      );
+    }
+    return (
+      <span key={i} className={css({ color: 'stone.300', fontSize: 'sm' })}>
+        {part.content}
+      </span>
+    );
+  });
+}
+
+function renderStreaming(text: string): ReactNode[] {
+  // During streaming, we can't parse complete code blocks.
+  // Show reasoning (text before first code block) dimmed, code blocks in progress
+  const parts = splitCodeBlocks(escapeHtml(text));
+  return parts.map((part, i) => {
+    if (part.type === 'code') {
+      return (
+        <pre key={i} className={css({
+          bg: 'stone.950',
+          p: '2',
+          my: '1',
+          borderRadius: 'md',
+          overflowX: 'auto',
+          fontSize: 'xs',
+          fontFamily: 'mono',
+          color: 'stone.200',
+        })}>{part.content}</pre>
+      );
+    }
+    return (
+      <span key={i} className={css({
+        color: 'stone.400',
+        fontSize: 'sm',
+        fontStyle: 'italic',
+      })}>{part.content}</span>
+    );
+  });
+}
+
+function splitCodeBlocks(text: string): Array<{ type: 'text' | 'code'; content: string }> {
+  const parts: Array<{ type: 'text' | 'code'; content: string }> = [];
+  const regex = /```(\w*)\n?([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+    }
+    parts.push({ type: 'code', content: match[2] });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+
+  return parts.length > 0 ? parts : [{ type: 'text', content: text }];
 }
 
 export default LLMPanel;
