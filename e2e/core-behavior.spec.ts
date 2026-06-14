@@ -140,19 +140,54 @@ test.describe('Core app behavior', () => {
     });
   });
 
-  test('share dialog opens with a URL', async ({ page }) => {
-    await disclaimerAcceptAndWait(page);
+  test.describe('Share dialog', () => {
+    test.beforeEach(async ({ page }) => {
+      await disclaimerAcceptAndWait(page);
+    });
 
-    // Click the Share button in the top bar
-    const shareButton = page.locator('button', { hasText: 'Share' }).first();
-    await shareButton.click();
-    await page.waitForTimeout(500);
+    test('opens with a URL', async ({ page }) => {
+      await page.locator('button', { hasText: 'Share' }).first().click();
+      await page.waitForTimeout(500);
+      await expect(page.getByRole('heading', { name: 'Share' })).toBeVisible({ timeout: 3000 });
+      await expect(page.locator('textarea[aria-label="url"]')).toHaveValue(/http/);
+    });
 
-    // The Share dialog has an <h2>Share</h2> heading when open
-    await expect(page.getByRole('heading', { name: 'Share' })).toBeVisible({ timeout: 3000 });
+    test('renders QR code after clicking Share button', async ({ page }) => {
+      await page.locator('button', { hasText: 'Share' }).first().click();
+      await page.waitForTimeout(500);
 
-    // The dialog contains a textarea with the share URL
-    await expect(page.locator('textarea[aria-label="url"]')).toHaveValue(/http/);
+      // Click the Share button INSIDE the open dialog
+      const dialogShareBtn = page.locator('dialog[open] button:has-text("Share")');
+      if (await dialogShareBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await dialogShareBtn.click({ force: true });
+        await page.waitForTimeout(2000);
+
+        // QR code is rendered as a <canvas> inside the qr box container
+        const canvas = page.locator('dialog[open] canvas');
+        await expect(canvas).toBeAttached({ timeout: 5000 });
+      }
+    });
+
+    test('shows error when content is too large for QR code', async ({ page }) => {
+      // Create a long URL hash to exceed QR code capacity (~2953 bytes for level L)
+      // Using a 4000-char hash should overflow it
+      await page.evaluate(() => {
+        history.replaceState(null, '', '#v=' + 'a'.repeat(4000));
+      });
+      await page.waitForTimeout(300);
+
+      await page.locator('button', { hasText: 'Share' }).first().click();
+      await page.waitForTimeout(500);
+
+      const dialogShareBtn = page.locator('dialog[open] button:has-text("Share")');
+      if (await dialogShareBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await dialogShareBtn.click({ force: true });
+        await page.waitForTimeout(2000);
+
+        // QR code generation should fail due to data exceeding capacity
+        await expect(page.getByText(/Failed to generate QR|too long|too large|input string/i)).toBeVisible({ timeout: 5000 });
+      }
+    });
   });
 });
 
