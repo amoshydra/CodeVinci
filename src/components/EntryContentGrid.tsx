@@ -8,6 +8,7 @@ export const A = tuple(
   "editor_",
   "divider",
   "bottom_",
+  "chat_",
 );
 
 export const EntryContentGrid = styled('div', {
@@ -52,6 +53,23 @@ export const EntryContentGrid = styled('div', {
             "sidebar editor_ divider viewer_"
             "sidebar editor_ divider viewer_"
             "sidebar bottom_ bottom_ bottom_"
+          `,
+        },
+      },
+      "ai-chat": {
+        gridTemplateRows: '1fr 1fr min-content',
+        gridTemplateColumns: '1fr',
+        gridTemplateAreas: `
+          "viewer_"
+          "chat_"
+          "bottom_"
+        `,
+        "@media screen and (orientation: landscape)": {
+          gridTemplateRows: '1fr min-content',
+          gridTemplateColumns: '1fr 1fr',
+          gridTemplateAreas: `
+            "viewer_ chat_"
+            "bottom_ bottom_"
           `,
         },
       },

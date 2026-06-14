@@ -121,7 +121,6 @@ export class LLMClient {
         for (const line of lines) {
           const data = line.slice(6);
           if (data === '[DONE]') {
-            finishReason = 'stop';
             continue;
           }
 

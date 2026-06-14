@@ -6,6 +6,7 @@ import {
   llmConfigStore,
   getEndpointForProvider,
   extractOrigin,
+  DEFAULT_SYSTEM_PROMPT,
   type LlmProvider,
   type LLMConfig,
 } from "../../services/llm/config";
@@ -337,7 +338,23 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
 
           {/* System Prompt */}
           <div className={css({ display: 'flex', flexDirection: 'column', gap: '1' })}>
-            <label className={labelStyles}>System Prompt</label>
+            <div className={css({ display: 'flex', alignItems: 'center', gap: '2' })}>
+              <label className={labelStyles}>System Prompt</label>
+              <button
+                type="button"
+                onClick={() => setSystemPrompt(DEFAULT_SYSTEM_PROMPT)}
+                className={css({
+                  fontSize: 'xs',
+                  color: 'stone.400',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '2px',
+                  _hover: { color: 'stone.200' },
+                })}
+              >
+                Reset
+              </button>
+            </div>
             <textarea
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}

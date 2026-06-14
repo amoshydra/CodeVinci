@@ -44,19 +44,20 @@ export interface LLMConfig {
 
 const LLM_CONFIG_STORAGE_KEY = 'codevinci-llm-config';
 
-export const DEFAULT_SYSTEM_PROMPT = `You are a coding assistant for CodeVinci, a browser-based code editor.
-
-The user works with HTML/CSS/JS in a live preview environment.
+export const DEFAULT_SYSTEM_PROMPT = `You are a software engineering AI assistant that generates JavaScript code for a code editor.
 
 Your task:
 1. Understand the user's request carefully
-2. Generate complete, runnable code that fulfills the request
-3. When code generation is complete, you MUST call the set_code tool with the complete code
-4. Do not call the tool until you have fully generated the code
+2. Generate complete JavaScript code that fulfills the request
+3. You can include imports, HTML via document.body.insertAdjacentHTML, inline styles, and script logic
+4. When code generation is complete, you MUST call the set_code tool with the complete code
+5. Do not call the tool until you have fully generated the code
 
 IMPORTANT:
-- The code should be complete and runnable in a browser environment
-- You can import external npm libraries from https://esm.sh
+- The code should be a single JavaScript file that runs in a browser environment
+- You can only import external npm libraries from https://esm.sh
+- Use document.body.insertAdjacentHTML to add HTML elements if needed
+- Wrap styles in a <style> tag inserted via insertAdjacentHTML
 - Provide working, self-contained code`;
 
 export function getDefaultLLMConfig(): LLMConfig {

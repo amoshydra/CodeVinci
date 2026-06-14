@@ -76,12 +76,15 @@ export function useLlmChat(initialSystemPrompt?: string) {
         },
         onComplete: (fullResponse: string) => {
           setState((prev) => {
-            const newMessages = [...prev.messages, { role: 'assistant' as const, content: fullResponse }];
+            const hasToolCalls = !!prev.toolCalls?.length;
+            const newMessages = hasToolCalls
+              ? prev.messages
+              : [...prev.messages, { role: 'assistant' as const, content: fullResponse }].slice(-MAX_MESSAGES);
             return {
               ...prev,
-              status: prev.toolCalls ? 'idle' : 'idle',
+              status: 'idle',
               streamingText: '',
-              messages: prev.toolCalls ? prev.messages : newMessages.slice(-MAX_MESSAGES),
+              messages: newMessages,
             };
           });
         },
@@ -131,11 +134,17 @@ export function useLlmChat(initialSystemPrompt?: string) {
   }, [state.pendingCode]);
 
   const rejectCode = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      toolCalls: null,
-      pendingCode: null,
-    }));
+    setState((prev) => {
+      const updatedMessages = prev.pendingCode
+        ? prev.messages.slice(0, -1)
+        : prev.messages;
+      return {
+        ...prev,
+        toolCalls: null,
+        pendingCode: null,
+        messages: updatedMessages,
+      };
+    });
   }, []);
 
   const clear = useCallback(() => {

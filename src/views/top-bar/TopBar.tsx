@@ -10,23 +10,50 @@ export interface TopBarProps extends HTMLProps<HTMLDivElement> {
   viewMode: SettingsMode
   onViewModeChange: (viewMode: SettingsMode) => void;
   onSettingsClick: () => void;
+  enableLlm?: boolean;
+  aiDotState?: 'hidden' | 'streaming' | 'pending' | 'error';
 }
 
 export const TopBar = (props: TopBarProps) => {
+  const { viewMode, onViewModeChange, onSettingsClick, enableLlm, aiDotState = 'hidden' } = props;
+
   return (
     <AppTopBar>
       <BrandLogoButton />
       <div className={css({ display: 'flex', gap: '1', alignItems: 'center' })}>
-        <SettingsButton onClick={props.onSettingsClick} />
+        <SettingsButton onClick={onSettingsClick} />
         <ShareButton
           className={cssNavbarButton}
         >Share</ShareButton>
 
+        {/* AI status dot */}
+        {aiDotState !== 'hidden' && (
+          <span
+            className={css({
+              width: '7px',
+              height: '7px',
+              borderRadius: 'full',
+              flexShrink: '0',
+              ...(aiDotState === 'streaming'
+                ? { bg: 'amber.400', animation: 'pulse 1s ease-in-out infinite' }
+                : aiDotState === 'pending'
+                  ? { bg: 'amber.400' }
+                  : { bg: 'red.400', animation: 'pulse 1s ease-in-out infinite' }
+              ),
+            })}
+            title={
+              aiDotState === 'streaming' ? 'AI generating...' :
+              aiDotState === 'pending' ? 'Code pending review' :
+              'AI error'
+            }
+          />
+        )}
+
         <select
-          value={props.viewMode}
+          value={viewMode}
           onChange={e => {
             const value = e.currentTarget.value;
-            props.onViewModeChange(value as SettingsMode);
+            onViewModeChange(value as SettingsMode);
           }}
           className={
             cx(
@@ -44,6 +71,9 @@ export const TopBar = (props: TopBarProps) => {
           }
         >
           <option disabled>Select mode</option>
+          {enableLlm && (
+            <option value="ai-chat">AI Chat</option>
+          )}
           <option value="view-edit">View & Edit</option>
           <option value="edit">Edit only</option>
           <option value="view">View only</option>

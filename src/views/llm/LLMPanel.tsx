@@ -1,33 +1,55 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { css } from "../../../styled-system/css";
-import { ActionButton } from "../../components/ActionButton";
+import type { ChatMessage } from "../../services/llm";
+import type { LlmStatus } from "../../services/llm";
 import { Dialog } from "../../components/Dialog";
-import { useLlmChat } from "../../services/llm";
 import { LlmSettings } from "./LlmSettings";
 
-interface PromptingViewProps {
+export interface LLMPanelProps {
   enableLlm: boolean;
   onEnableLlmChange: (enabled: boolean) => void;
   onCodeChange?: (code: string) => void;
   errorCount?: number;
+  status: LlmStatus;
+  streamingText: string;
+  messages: ChatMessage[];
+  lastError: string | null;
+  pendingCode: string | null;
+  send: (userMessage: string) => void;
+  acceptCode: (onCodeChange?: (code: string) => void) => void;
+  rejectCode: () => void;
+  clear: () => void;
+  isConfigured: boolean;
 }
 
-const PromptingView = ({ enableLlm, onEnableLlmChange, onCodeChange, errorCount = 0 }: PromptingViewProps) => {
-  const { status, streamingText, messages, lastError, pendingCode, send, acceptCode, rejectCode, clear, isConfigured } = useLlmChat();
-  const [expanded, setExpanded] = useState(false);
+const LLMPanel = ({
+  enableLlm,
+  onEnableLlmChange,
+  onCodeChange,
+  errorCount = 0,
+  status,
+  streamingText,
+  messages,
+  lastError,
+  pendingCode,
+  send,
+  acceptCode,
+  rejectCode,
+  clear,
+  isConfigured,
+}: LLMPanelProps) => {
   const [input, setInput] = useState("");
-  const [mode, setMode] = useState<"auto" | "create" | "edit">("auto");
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const hasOutput = messages.length > 0 || !!streamingText || !!lastError || !!pendingCode;
+
   const canSend = input.trim() && status !== "streaming" && isConfigured;
 
   useEffect(() => {
-    if (expanded) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, streamingText, expanded]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, streamingText]);
 
   const handleSend = useCallback(() => {
     if (!canSend) return;
@@ -40,9 +62,6 @@ const PromptingView = ({ enableLlm, onEnableLlmChange, onCodeChange, errorCount 
       e.preventDefault();
       handleSend();
     }
-    if (e.key === "Escape") {
-      setExpanded(false);
-    }
   }, [handleSend]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -51,490 +70,371 @@ const PromptingView = ({ enableLlm, onEnableLlmChange, onCodeChange, errorCount 
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
   }, []);
 
-  const handleModeClick = useCallback((m: "auto" | "create" | "edit") => {
-    setMode(m);
-  }, []);
-
   const contextTags: { label: string; variant: 'error' }[] = [];
   if (errorCount > 0) {
     contextTags.push({ label: `${errorCount} error${errorCount > 1 ? 's' : ''}`, variant: 'error' });
   }
 
   return (
-    <>
-      {/* Collapsed pill */}
-      {!expanded && (
-        <div
-          onClick={() => setExpanded(true)}
-          className={css({
-            position: 'fixed',
-            bottom: '0',
-            left: '0',
-            right: '0',
-            zIndex: '100',
-            bg: 'stone.800',
-            borderTop: '1px solid',
-            borderColor: 'stone.700',
-            color: 'stone.400',
-            fontSize: 'sm',
-            px: '4',
-            py: '2.5',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2',
-            _hover: { bg: 'stone.700' },
-            transition: 'background 0.15s',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-          })}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={css({ flexShrink: '0', color: 'stone.500' })}>
+    <div className={css({
+      display: 'flex',
+      flexDirection: 'column',
+      height: 'full',
+      bg: 'stone.900',
+      overflow: 'hidden',
+    })}>
+      {/* Header */}
+      <div className={css({
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        px: '3',
+        py: '2',
+        flexShrink: '0',
+        borderBottom: '1px solid',
+        borderColor: 'stone.800',
+        gap: '2',
+      })}>
+        <div className={css({
+          display: 'flex',
+          alignItems: 'center',
+          gap: '2',
+        })}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={css({ color: 'stone.400' })}>
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          <span className={css({ flex: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
-            {isConfigured ? "Ask AI to create or edit code..." : "Configure AI in Settings"}
+          <span className={css({ fontSize: 'sm', fontWeight: 'semibold', color: 'stone.200' })}>
+            AI Chat
           </span>
-          {!isConfigured && (
+          {status === 'streaming' && (
             <span className={css({
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '1.5',
               fontSize: 'xs',
+              color: 'amber.400',
+            })}>
+              <span className={css({
+                width: '6px',
+                height: '6px',
+                borderRadius: 'full',
+                bg: 'amber.400',
+                animation: 'pulse 1s ease-in-out infinite',
+              })} />
+              generating code...
+            </span>
+          )}
+          {pendingCode && status !== 'streaming' && (
+            <span className={css({
+              width: '6px',
+              height: '6px',
+              borderRadius: 'full',
+              bg: 'amber.400',
+              flexShrink: '0',
+            })} />
+          )}
+          {contextTags.length > 0 && contextTags.map((tag, i) => (
+            <span key={i} className={css({
               px: '1.5',
               py: '0.5',
               borderRadius: 'sm',
-              bg: 'amber.900/30',
-              color: 'amber.400',
+              fontSize: 'xs',
+              fontFamily: 'mono',
+              letterSpacing: '0.01em',
+              ...(tag.variant === 'error'
+                ? { bg: 'red.900/30', color: 'red.400' }
+                : { bg: 'stone.800', color: 'stone.400' }
+              ),
             })}>
-              Not configured
+              {tag.label}
             </span>
-          )}
+          ))}
         </div>
-      )}
-
-      {/* Expanded sheet overlay */}
-      {expanded && (
-        <>
-          <div
-            onClick={() => setExpanded(false)}
-            className={css({
-              position: 'fixed',
-              inset: '0',
-              zIndex: '99',
-              bg: 'rgba(0,0,0,0.4)',
-            })}
-          />
-          <div className={css({
-            position: 'fixed',
-            bottom: '0',
-            left: '0',
-            right: '0',
-            zIndex: '100',
-            bg: 'stone.900',
-            borderTop: '1px solid',
-            borderColor: 'stone.700',
-            display: 'flex',
-            flexDirection: 'column',
-            maxH: '70vh',
-            transform: 'translateY(0)',
-            transition: 'transform 0.2s ease-out',
-          })}>
-            {/* Handle */}
-            <div
-              onClick={() => setExpanded(false)}
+        <div className={css({ display: 'flex', gap: '1', alignItems: 'center' })}>
+          {hasOutput && (
+            <button
+              onClick={clear}
               className={css({
-                display: 'flex',
-                justifyContent: 'center',
-                py: '1.5',
+                background: 'none',
+                border: 'none',
+                color: 'stone.500',
                 cursor: 'pointer',
-                flexShrink: '0',
-                _hover: { bg: 'stone.800' },
+                px: '1.5',
+                py: '0.5',
+                borderRadius: 'md',
+                fontSize: 'xs',
+                _hover: { color: 'stone.200', bg: 'stone.800' },
               })}
             >
-              <div className={css({
-                w: '8',
-                h: '1',
-                bg: 'stone.600',
-                borderRadius: 'full',
-              })} />
-            </div>
+              Clear
+            </button>
+          )}
+          <button
+            onClick={() => setShowSettings(true)}
+            className={css({
+              background: 'none',
+              border: 'none',
+              color: 'stone.500',
+              cursor: 'pointer',
+              p: '1',
+              borderRadius: 'md',
+              display: 'grid',
+              placeItems: 'center',
+              _hover: { color: 'stone.200', bg: 'stone.800' },
+            })}
+            aria-label="AI Settings"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
-            {/* Header row */}
+      {/* Messages */}
+      <div className={css({
+        flex: '1',
+        overflowY: 'auto',
+        px: '3',
+        py: '2',
+        minH: '0',
+      })}>
+        {!hasOutput && (
+          <div className={css({
+            py: '8',
+            textAlign: 'center',
+            fontSize: 'sm',
+            color: 'stone.600',
+          })}>
+            {isConfigured
+              ? 'Ask AI to write or modify code...'
+              : 'Configure AI in Settings to get started'}
+          </div>
+        )}
+
+        {messages.map((msg, i) => (
+          <div key={i} className={css({
+            py: '2',
+            borderBottom: i < messages.length - 1 ? '1px solid' : 'none',
+            borderColor: 'stone.800',
+          })}>
             <div className={css({
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              px: '4',
-              pb: '2',
-              flexShrink: '0',
+              fontSize: 'xs',
+              color: msg.role === 'user' ? 'sky.400' : 'stone.500',
+              mb: '1',
+              fontFamily: 'mono',
+              letterSpacing: '0.02em',
             })}>
-              <span className={css({ fontSize: 'sm', fontWeight: 'semibold', color: 'stone.200' })}>
-                AI Prompt
-              </span>
-              <div className={css({ display: 'flex', gap: '1' })}>
-                {hasOutput && (
-                  <ActionButton size="xs" visual="secondary" onClick={clear}>
-                    Clear
-                  </ActionButton>
-                )}
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className={css({
-                    background: 'none',
-                    border: 'none',
-                    color: 'stone.400',
-                    cursor: 'pointer',
-                    p: '1',
-                    borderRadius: 'md',
-                    display: 'grid',
-                    placeItems: 'center',
-                    _hover: { color: 'stone.200', bg: 'stone.800' },
-                  })}
-                  aria-label="AI Settings"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                  </svg>
-                </button>
-              </div>
+              {msg.role === 'user' ? 'You' : 'AI'}
             </div>
-
-            {/* Mode chips */}
-            <div className={css({ px: '4', pb: '2', display: 'flex', gap: '1.5', flexShrink: '0' })}>
-              {(["auto", "create", "edit"] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => handleModeClick(m)}
-                  className={css({
-                    px: '2.5',
-                    py: '1',
-                    borderRadius: 'md',
-                    fontSize: 'xs',
-                    fontWeight: 'medium',
-                    cursor: 'pointer',
-                    border: '1px solid',
-                    transition: 'all 0.15s',
-                    letterSpacing: '0.02em',
-                    ...(mode === m
-                      ? { bg: 'blue.500/20', color: 'blue.300', borderColor: 'blue.500/40' }
-                      : { bg: 'transparent', color: 'stone.400', borderColor: 'stone.700', _hover: { color: 'stone.200', borderColor: 'stone.600' } }
-                    ),
-                  })}
-                >
-                  {m === 'auto' ? 'Auto' : m === 'create' ? 'Create' : 'Edit'}
-                </button>
-              ))}
-            </div>
-
-            {/* Context tags */}
-            {contextTags.length > 0 && (
-              <div className={css({ px: '4', pb: '2', display: 'flex', gap: '1.5', flexWrap: 'wrap', flexShrink: '0' })}>
-                {contextTags.map((tag, i) => (
-                  <span
-                    key={i}
-                    className={css({
-                      px: '1.5',
-                      py: '0.5',
-                      borderRadius: 'sm',
-                      fontSize: 'xs',
-                      fontFamily: 'mono',
-                      letterSpacing: '0.01em',
-                      ...(tag.variant === 'error'
-                        ? { bg: 'red.900/30', color: 'red.400' }
-                        : { bg: 'stone.800', color: 'stone.400' }
-                      ),
-                    })}
-                  >
-                    {tag.label}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Input area — at the TOP of the sheet */}
             <div className={css({
-              px: '4',
-              pb: '2',
-              display: 'flex',
-              gap: '2',
-              alignItems: 'flex-end',
-              flexShrink: '0',
+              color: msg.role === 'user' ? 'stone.200' : 'stone.300',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              lineHeight: '1.5',
+              fontFamily: msg.role === 'assistant' ? 'mono' : 'inherit',
+              fontSize: msg.role === 'assistant' ? 'xs' : 'sm',
             })}>
-              <textarea
-                value={input}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                disabled={status === 'streaming' || !isConfigured}
-                placeholder={
-                  !isConfigured
-                    ? 'Configure AI in settings...'
-                    : status === 'streaming'
-                      ? 'Waiting for response...'
-                      : 'Ask AI to create or edit code... (Cmd+Enter to send)'
-                }
-                rows={1}
+              {msg.role === 'user' ? msg.content : formatOutput(msg.content)}
+            </div>
+          </div>
+        ))}
+
+        {streamingText && (
+          <div className={css({ py: '2' })}>
+            <div className={css({
+              fontSize: 'xs',
+              color: 'stone.500',
+              mb: '1',
+              fontFamily: 'mono',
+              letterSpacing: '0.02em',
+            })}>
+              AI
+            </div>
+            <div className={css({
+              fontSize: 'xs',
+              color: 'stone.300',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              lineHeight: '1.5',
+              fontFamily: 'mono',
+            })}>
+              {formatOutput(streamingText)}
+            </div>
+          </div>
+        )}
+
+        {pendingCode && (
+          <div className={css({
+            py: '2',
+            px: '3',
+            mt: '2',
+            borderRadius: 'md',
+            bg: 'emerald.900/20',
+            border: '1px solid',
+            borderColor: 'emerald.700/40',
+          })}>
+            <div className={css({
+              fontSize: 'xs',
+              color: 'emerald.400',
+              mb: '1.5',
+              fontFamily: 'mono',
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase',
+            })}>
+              Code generated — review below
+            </div>
+            <pre className={css({
+              fontSize: 'xs',
+              fontFamily: 'mono',
+              color: 'stone.200',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              lineHeight: '1.5',
+              bg: 'stone.950',
+              p: '2',
+              borderRadius: 'md',
+              maxH: '36',
+              overflowY: 'auto',
+              mb: '2',
+            })}>
+              {formatOutput(pendingCode.slice(0, 1000))}
+              {pendingCode.length > 1000 && (
+                <span className={css({ color: 'stone.500' })}>
+                  {'\n'}... ({pendingCode.length - 1000} more chars)
+                </span>
+              )}
+            </pre>
+            <div className={css({ display: 'flex', gap: '2' })}>
+              <button
+                onClick={() => acceptCode(onCodeChange)}
                 className={css({
-                  flex: '1',
                   px: '3',
-                  py: '2',
+                  py: '1.5',
+                  borderRadius: 'md',
+                  border: 'none',
+                  bg: 'emerald.600',
+                  color: 'white',
+                  fontSize: 'sm',
+                  fontWeight: 'medium',
+                  cursor: 'pointer',
+                  _hover: { bg: 'emerald.500' },
+                })}
+              >
+                Accept code
+              </button>
+              <button
+                onClick={rejectCode}
+                className={css({
+                  px: '3',
+                  py: '1.5',
                   borderRadius: 'md',
                   border: '1px solid',
                   borderColor: 'stone.600',
-                  background: 'stone.800',
-                  color: 'stone.100',
+                  bg: 'transparent',
+                  color: 'stone.400',
                   fontSize: 'sm',
-                  fontFamily: 'inherit',
-                  outline: 'none',
-                  resize: 'none',
-                  maxH: '24',
-                  lineHeight: '1.4',
-                  '&:focus': {
-                    borderColor: 'sky.500',
-                  },
-                  '&:disabled': {
-                    opacity: '0.5',
-                    cursor: 'not-allowed',
-                  },
-                  '&::placeholder': {
-                    color: 'stone.500',
-                  },
-                })}
-              />
-              <button
-                onClick={handleSend}
-                disabled={!canSend}
-                className={css({
-                  px: '3',
-                  py: '2',
-                  borderRadius: 'md',
-                  border: 'none',
-                  background: canSend ? 'sky.600' : 'stone.700',
-                  color: canSend ? 'white' : 'stone.500',
-                  cursor: canSend ? 'pointer' : 'not-allowed',
-                  fontSize: 'sm',
-                  fontWeight: 'medium',
-                  transition: 'background 0.15s',
-                  flexShrink: '0',
-                  display: 'grid',
-                  placeItems: 'center',
-                  _hover: canSend ? { bg: 'sky.500' } : undefined,
+                  cursor: 'pointer',
+                  _hover: { bg: 'stone.800', color: 'stone.200' },
                 })}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
+                Reject
               </button>
             </div>
-
-            {/* Output area */}
-            <div className={css({
-              flex: '1',
-              overflowY: 'auto',
-              px: '4',
-              pb: '3',
-              minH: '0',
-              borderTop: hasOutput ? '1px solid' : 'none',
-              borderColor: 'stone.800',
-            })}>
-              {!hasOutput && (
-                <div className={css({
-                  py: '4',
-                  textAlign: 'center',
-                  fontSize: 'sm',
-                  color: 'stone.600',
-                })}>
-                  {isConfigured
-                    ? 'Your AI response will appear here'
-                    : 'Configure AI in Settings to get started'}
-                </div>
-              )}
-
-              {messages.map((msg, i) => (
-                <div key={i} className={css({
-                  py: '2',
-                  borderBottom: i < messages.length - 1 ? '1px solid' : 'none',
-                  borderColor: 'stone.800',
-                })}>
-                  <div className={css({
-                    fontSize: 'xs',
-                    color: msg.role === 'user' ? 'sky.400' : 'stone.500',
-                    mb: '1',
-                    fontFamily: 'mono',
-                    letterSpacing: '0.02em',
-                  })}>
-                    {msg.role === 'user' ? 'You' : 'AI'}
-                  </div>
-                  <div className={css({
-                    color: msg.role === 'user' ? 'stone.200' : 'stone.300',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    lineHeight: '1.5',
-                    fontFamily: msg.role === 'assistant' ? 'mono' : 'inherit',
-                    fontSize: msg.role === 'assistant' ? 'xs' : 'sm',
-                    '& code': {
-                      background: 'stone.950',
-                      px: '1',
-                      py: '0.5',
-                      borderRadius: '4',
-                      fontSize: 'xs',
-                    },
-                    '& pre': {
-                      background: 'stone.950',
-                      p: '2',
-                      borderRadius: 'md',
-                      overflowX: 'auto',
-                      my: '1',
-                    },
-                    '& pre code': {
-                      background: 'none',
-                      p: '0',
-                    },
-                  })}>
-                    {msg.role === 'user' ? msg.content : formatOutput(msg.content)}
-                  </div>
-                </div>
-              ))}
-
-              {streamingText && (
-                <div className={css({ py: '2' })}>
-                  <div className={css({
-                    fontSize: 'xs',
-                    color: 'stone.500',
-                    mb: '1',
-                    fontFamily: 'mono',
-                    letterSpacing: '0.02em',
-                  })}>
-                    AI
-                    <span className={css({
-                      ml: '1.5',
-                      color: 'amber.400',
-                      fontSize: 'xs',
-                    })}>streaming...</span>
-                  </div>
-                  <div className={css({
-                    fontSize: 'xs',
-                    color: 'stone.300',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    lineHeight: '1.5',
-                    fontFamily: 'mono',
-                    '& code': {
-                      background: 'stone.950',
-                      px: '1',
-                      py: '0.5',
-                      borderRadius: '4',
-                    },
-                    '& pre': {
-                      background: 'stone.950',
-                      p: '2',
-                      borderRadius: 'md',
-                      overflowX: 'auto',
-                      my: '1',
-                    },
-                    '& pre code': {
-                      background: 'none',
-                      p: '0',
-                    },
-                  })}>
-                    {formatOutput(streamingText)}
-                  </div>
-                </div>
-              )}
-
-              {pendingCode && (
-                <div className={css({
-                  py: '2',
-                  px: '3',
-                  mt: '2',
-                  borderRadius: 'md',
-                  bg: 'emerald.900/20',
-                  border: '1px solid',
-                  borderColor: 'emerald.700/40',
-                })}>
-                  <div className={css({
-                    fontSize: 'xs',
-                    color: 'emerald.400',
-                    mb: '1.5',
-                    fontFamily: 'mono',
-                    letterSpacing: '0.02em',
-                    textTransform: 'uppercase',
-                  })}>
-                    Code generated — review below
-                  </div>
-                  <pre className={css({
-                    fontSize: 'xs',
-                    fontFamily: 'mono',
-                    color: 'stone.200',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    lineHeight: '1.5',
-                    bg: 'stone.950',
-                    p: '2',
-                    borderRadius: 'md',
-                    maxH: '36',
-                    overflowY: 'auto',
-                    mb: '2',
-                  })}>
-                    {formatOutput(pendingCode.slice(0, 1000))}
-                    {pendingCode.length > 1000 && (
-                      <span className={css({ color: 'stone.500' })}>
-                        {'\n'}... ({pendingCode.length - 1000} more chars)
-                      </span>
-                    )}
-                  </pre>
-                  <div className={css({ display: 'flex', gap: '2' })}>
-                    <button
-                      onClick={() => acceptCode(onCodeChange)}
-                      className={css({
-                        px: '3',
-                        py: '1.5',
-                        borderRadius: 'md',
-                        border: 'none',
-                        bg: 'emerald.600',
-                        color: 'white',
-                        fontSize: 'sm',
-                        fontWeight: 'medium',
-                        cursor: 'pointer',
-                        _hover: { bg: 'emerald.500' },
-                      })}
-                    >
-                      Accept code
-                    </button>
-                    <button
-                      onClick={rejectCode}
-                      className={css({
-                        px: '3',
-                        py: '1.5',
-                        borderRadius: 'md',
-                        border: '1px solid',
-                        borderColor: 'stone.600',
-                        bg: 'transparent',
-                        color: 'stone.400',
-                        fontSize: 'sm',
-                        cursor: 'pointer',
-                        _hover: { bg: 'stone.800', color: 'stone.200' },
-                      })}
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {lastError && (
-                <div className={css({
-                  py: '2',
-                  fontSize: 'sm',
-                  color: 'red.400',
-                })}>
-                  {lastError}
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
           </div>
-        </>
-      )}
+        )}
+
+        {lastError && (
+          <div className={css({
+            py: '2',
+            fontSize: 'sm',
+            color: 'red.400',
+          })}>
+            {lastError}
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input at bottom */}
+      <div className={css({
+        px: '3',
+        py: '2',
+        display: 'flex',
+        gap: '2',
+        alignItems: 'flex-end',
+        flexShrink: '0',
+        borderTop: '1px solid',
+        borderColor: 'stone.800',
+      })}>
+        <textarea
+          ref={inputRef}
+          value={input}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          disabled={status === 'streaming' || !isConfigured}
+          placeholder={
+            !isConfigured
+              ? 'Configure AI in settings...'
+              : status === 'streaming'
+                ? 'Waiting for response...'
+                : 'Ask AI to write code... (Cmd+Enter to send)'
+          }
+          rows={1}
+          className={css({
+            flex: '1',
+            px: '3',
+            py: '2',
+            borderRadius: 'md',
+            border: '1px solid',
+            borderColor: 'stone.600',
+            background: 'stone.800',
+            color: 'stone.100',
+            fontSize: 'sm',
+            fontFamily: 'inherit',
+            outline: 'none',
+            resize: 'none',
+            maxH: '24',
+            lineHeight: '1.4',
+            '&:focus': {
+              borderColor: 'sky.500',
+            },
+            '&:disabled': {
+              opacity: '0.5',
+              cursor: 'not-allowed',
+            },
+            '&::placeholder': {
+              color: 'stone.500',
+            },
+          })}
+        />
+        <button
+          onClick={handleSend}
+          disabled={!canSend}
+          className={css({
+            px: '3',
+            py: '2',
+            borderRadius: 'md',
+            border: 'none',
+            background: canSend ? 'sky.600' : 'stone.700',
+            color: canSend ? 'white' : 'stone.500',
+            cursor: canSend ? 'pointer' : 'not-allowed',
+            fontSize: 'sm',
+            fontWeight: 'medium',
+            transition: 'background 0.15s',
+            flexShrink: '0',
+            display: 'grid',
+            placeItems: 'center',
+            _hover: canSend ? { bg: 'sky.500' } : undefined,
+          })}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
+        </button>
+      </div>
 
       {/* Settings dialog */}
       <Dialog
@@ -549,7 +449,7 @@ const PromptingView = ({ enableLlm, onEnableLlmChange, onCodeChange, errorCount 
           onClose={() => setShowSettings(false)}
         />
       </Dialog>
-    </>
+    </div>
   );
 };
 
@@ -560,4 +460,4 @@ function formatOutput(text: string): string {
     .replace(/>/g, '&gt;');
 }
 
-export default PromptingView;
+export default LLMPanel;
