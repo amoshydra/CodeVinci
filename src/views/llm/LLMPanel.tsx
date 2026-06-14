@@ -281,7 +281,7 @@ const LLMPanel = ({
               bg: 'stone.950',
               p: '2',
               borderRadius: 'md',
-              maxH: '48',
+              maxH: '60vh',
               overflowY: 'auto',
               mb: '2',
             })}>
@@ -533,42 +533,6 @@ function computeDiff(oldText: string, newText: string): Array<{ status: 'same' |
 
 function renderDiff(oldCode: string, newCode: string): ReactNode[] {
   const diff = computeDiff(oldCode, newCode);
-  if (diff.length > 100) {
-    // Too many lines — show truncated version
-    const first = diff.slice(0, 50);
-    const last = diff.slice(-50);
-    return [
-      ...first.map((d, i) => (
-        <div key={i} className={css({
-          fontFamily: 'mono', fontSize: 'xs', lineHeight: '1.4',
-          color: d.status === 'added' ? 'emerald.300' : d.status === 'removed' ? 'red.400' : 'stone.400',
-          bg: d.status === 'added' ? 'emerald.900/20' : d.status === 'removed' ? 'red.900/20' : 'transparent',
-          px: '1', py: '0.5', borderRadius: 'sm', my: '0.5',
-        })}>
-          <span className={css({ color: 'stone.600', mr: '1', userSelect: 'none' })}>
-            {d.status === 'added' ? '+' : d.status === 'removed' ? '-' : ' '}
-          </span>
-          {d.line || ' '}
-        </div>
-      )),
-      <div key="ellipsis" className={css({ color: 'stone.500', textAlign: 'center', py: '1', fontSize: 'xs' })}>
-        ... ({diff.length - 100} more lines) ...
-      </div>,
-      ...last.map((d, i) => (
-        <div key={`l${i}`} className={css({
-          fontFamily: 'mono', fontSize: 'xs', lineHeight: '1.4',
-          color: d.status === 'added' ? 'emerald.300' : d.status === 'removed' ? 'red.400' : 'stone.400',
-          bg: d.status === 'added' ? 'emerald.900/20' : d.status === 'removed' ? 'red.900/20' : 'transparent',
-          px: '1', py: '0.5', borderRadius: 'sm', my: '0.5',
-        })}>
-          <span className={css({ color: 'stone.600', mr: '1', userSelect: 'none' })}>
-            {d.status === 'added' ? '+' : d.status === 'removed' ? '-' : ' '}
-          </span>
-          {d.line || ' '}
-        </div>
-      )),
-    ];
-  }
   return diff.map((d, i) => (
     <div key={i} className={css({
       fontFamily: 'mono', fontSize: 'xs', lineHeight: '1.4',
