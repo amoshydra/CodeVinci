@@ -27,12 +27,14 @@ describe('ViewerIframe sandbox', () => {
     expect(sandbox.split(' ')).toHaveLength(1);
   });
 
-  it('uses src="/viewer.html" instead of srcdoc', () => {
+  it('injects localStorage mock before user code', () => {
     const { container } = render(
       <ViewerIframe script="console.log('test')" onFrameMessage={() => {}} />
     );
-    const iframe = container.querySelector('iframe')!;
-    expect(iframe.getAttribute('src')).toBe('/viewer.html');
-    expect(iframe.getAttribute('srcdoc')).toBeNull();
+    const srcdoc = container.querySelector('iframe')!.getAttribute('srcdoc') || '';
+    expect(srcdoc).toContain('localStorage');
+    expect(srcdoc).toContain('sessionStorage');
+    expect(srcdoc).toContain('getItem');
+    expect(srcdoc).toContain('setItem');
   });
 });

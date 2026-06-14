@@ -34,8 +34,27 @@ export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIf
   );
 });
 
+const storageMock = `<script>
+(function(){
+  var mem = {}, smem = {};
+  function S(m) {
+    return {
+      getItem: function(k) { return m.hasOwnProperty(k) ? m[k] : null; },
+      setItem: function(k, v) { m[k] = String(v); },
+      removeItem: function(k) { delete m[k]; },
+      clear: function() { for (var k in m) delete m[k]; },
+      key: function(i) { var keys = Object.keys(m); return keys[i] || null; },
+      get length() { return Object.keys(m).length; }
+    };
+  }
+  Object.defineProperty(window, 'localStorage', { value: S(mem), writable: false });
+  Object.defineProperty(window, 'sessionStorage', { value: S(smem), writable: false });
+})();
+</script>`;
+
 const getSrcDoc = (script: string) =>
   createEsbuilderHtmlTemplate("", `
+    ${storageMock}
     <script type="module" src=${JSON.stringify(iframeScript)} data-origin=${location.origin}></script>
     <script type="module">${script}</script>
   `);

