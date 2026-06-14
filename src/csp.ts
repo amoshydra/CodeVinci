@@ -9,6 +9,12 @@ function extractOrigin(url: string): string {
   }
 }
 
+const CDN_ORIGINS = [
+  'https://esm.sh',
+  'https://cdn.jsdelivr.net',
+  'https://unpkg.com',
+].join(' ');
+
 function applyCSP(aiEndpoint: string): void {
   const existing = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
   if (existing) existing.remove();
@@ -26,10 +32,10 @@ function applyCSP(aiEndpoint: string): void {
   const policy = [
     "default-src 'self'",
     `connect-src ${connectSrc}${devConnect}`,
-    "img-src 'self' data: blob:",
-    "style-src 'self' 'unsafe-inline'",
-    "script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'",
-    "font-src 'self'",
+    `img-src 'self' data: blob: ${CDN_ORIGINS}`,
+    `style-src 'self' 'unsafe-inline' ${CDN_ORIGINS}`,
+    `script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' ${CDN_ORIGINS}`,
+    `font-src 'self' ${CDN_ORIGINS}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'none'",

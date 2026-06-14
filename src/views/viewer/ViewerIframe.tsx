@@ -1,16 +1,8 @@
-import { HTMLAttributes, memo, useCallback, useEffect, useRef } from "react";
+import { HTMLAttributes, memo, useEffect } from "react";
+import { createEsbuilderHtmlTemplate } from "../../utils/esbuilder.html";
 import { withCn } from "../../utils/tailwind";
 import { MessageEventFrameMessage, OnFrameMessage } from "./interface";
 import iframeScript from "./ViewerIframeScript?worker&url";
-
-function postCode(iframe: HTMLIFrameElement | null, code: string) {
-  iframe?.contentWindow?.postMessage({
-    _id: 'codevinci-init',
-    scriptUrl: iframeScript,
-    code,
-    origin: location.origin,
-  }, '*');
-}
 
 export interface ViewerIframeProps extends HTMLAttributes<HTMLElement> {
   script: string;
@@ -18,9 +10,8 @@ export interface ViewerIframeProps extends HTMLAttributes<HTMLElement> {
 }
 
 export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIframeProps) => {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const srcDoc = getSrcDoc(script);
 
-  // Forward messages from the iframe to the parent
   useEffect(() => {
     const handler = (event: MessageEvent<MessageEventFrameMessage>) => {
       const { _id, ...rest } = event.data;
@@ -34,23 +25,17 @@ export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIf
     }
   }, []);
 
-  // Send code to iframe whenever it changes
-  useEffect(() => {
-    postCode(iframeRef.current, script);
-  }, [script]);
-
-  // Also send on initial iframe load (effect may fire before iframe is ready)
-  const handleLoad = useCallback(() => {
-    postCode(iframeRef.current, script);
-  }, [script]);
-
   return (
     <iframe
-      ref={iframeRef}
       {...withCn(props)}
       sandbox="allow-scripts"
-      src="/viewer.html"
-      onLoad={handleLoad}
+      srcDoc={srcDoc}
     />
   );
 });
+
+const getSrcDoc = (script: string) =>
+  createEsbuilderHtmlTemplate("", `
+    <script type="module" src=${JSON.stringify(iframeScript)} data-origin=${location.origin}></script>
+    <script type="module">${script}</script>
+  `);
