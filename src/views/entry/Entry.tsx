@@ -61,14 +61,6 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
     onSettingUpdate("mode", newViewMode as SettingsMode);
   }, [onSettingUpdate, deferredCode, settings]);
 
-  const handleAiPillClick = useCallback(() => {
-    if (!isConfigured) {
-      setSettingsOpen(true);
-      return;
-    }
-    onSettingUpdate("mode", "ai-chat");
-  }, [onSettingUpdate, isConfigured]);
-
   const handleLLMCodeChange = useCallback((pendingCode: string) => {
     onCodeChange(pendingCode);
   }, [onCodeChange]);
@@ -200,71 +192,6 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
           </Suspense>
         )}
       </EntryContentGrid>
-
-      {/* Collapsed AI pill — in non-ai-chat modes when LLM is enabled */}
-      {settings.enableLlm && !isAiChatMode && (
-        <div
-          onClick={handleAiPillClick}
-          className={css({
-            position: 'fixed',
-            bottom: settings.mode.includes('edit') ? '48px' : '0',
-            left: '0',
-            right: '0',
-            zIndex: '100',
-            bg: 'stone.800',
-            borderTop: '1px solid',
-            borderColor: 'stone.700',
-            color: 'stone.400',
-            fontSize: 'sm',
-            px: '4',
-            py: '2.5',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2',
-            _hover: { bg: 'stone.700' },
-            transition: 'background 0.15s',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-          })}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={css({ flexShrink: '0', color: 'stone.500' })}>
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          <span className={css({ flex: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
-            {status === 'streaming' ? 'AI is generating...' :
-             showPendingLabel ? 'Code pending review — open AI Chat' :
-             isConfigured ? 'Ask AI to write or modify code...' :
-             'Configure AI in Settings'}
-          </span>
-          {aiDotState !== 'hidden' && (
-            <span className={css({
-              width: '6px',
-              height: '6px',
-              borderRadius: 'full',
-              flexShrink: '0',
-              ...(aiDotState === 'streaming'
-                ? { bg: 'amber.400', animation: 'pulse 1s ease-in-out infinite' }
-                : aiDotState === 'pending'
-                  ? { bg: 'amber.400' }
-                  : { bg: 'red.400', animation: 'pulse 1s ease-in-out infinite' }
-              ),
-            })} />
-          )}
-          {!isConfigured && (
-            <span className={css({
-              fontSize: 'xs',
-              px: '1.5',
-              py: '0.5',
-              borderRadius: 'sm',
-              bg: 'amber.900/30',
-              color: 'amber.400',
-            })}>
-              Not configured
-            </span>
-          )}
-        </div>
-      )}
 
       {/* Settings dialog */}
       <Dialog
