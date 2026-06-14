@@ -23,9 +23,9 @@ function trimMessages(messages: ChatMessage[]): ChatMessage[] {
   let total = messages.reduce((sum, m) => sum + m.content.length, 0);
   if (total <= MAX_HISTORY_CHARS) return messages;
   const result = [...messages];
-  while (total > MAX_HISTORY_CHARS && result.length > 1) {
-    const removed = result.shift()!;
-    total -= removed.content.length;
+  while (total > MAX_HISTORY_CHARS && result.length > 2) {
+    const [a, b] = result.splice(0, 2);
+    total -= a.content.length + (b ? b.content.length : 0);
   }
   return result;
 }
