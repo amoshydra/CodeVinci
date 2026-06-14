@@ -33,6 +33,7 @@ function applyCSP(aiEndpoint: string): void {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'none'",
+    "frame-ancestors 'none'",
     `worker-src ${workerSrc}`,
   ].join('; ');
 
