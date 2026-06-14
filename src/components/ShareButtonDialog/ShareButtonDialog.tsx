@@ -1,4 +1,4 @@
-import { ReactNode, useId, useState } from "react";
+import { ReactNode, useId } from "react";
 import { css } from "../../../styled-system/css";
 import { ActionButton } from "../ActionButton";
 import { Dialog, type DialogProps } from "../Dialog";
@@ -8,7 +8,6 @@ export interface ShareButtonDialogProps extends Omit<DialogProps, "id" | "childr
 
 export const ShareButtonDialog = (props: ShareButtonDialogProps) => {
   const id = useId();
-  const [showQrCode, setShowQrCode] = useState(false);
 
   const shareUrl = (() => {
     const url = new URL(location.href);
@@ -26,10 +25,11 @@ export const ShareButtonDialog = (props: ShareButtonDialogProps) => {
     navigator.clipboard.writeText(shareUrl)
   };
   const handleShare = () => {
-    setShowQrCode(true);
     navigator.share({
       url: shareUrl,
-    })
+    }).catch(() => {
+      // Web Share not available — QR code is rendered regardless
+    });
   };
 
 
@@ -47,7 +47,7 @@ export const ShareButtonDialog = (props: ShareButtonDialogProps) => {
       >
         <ShareButtonDialogQrBox
           value={shareUrl}
-          visible={showQrCode}
+          visible={true}
         />
 
         <ShareInputBox value={shareUrl} />
