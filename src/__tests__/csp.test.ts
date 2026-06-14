@@ -3,7 +3,6 @@ import { initCSP } from '../csp';
 
 describe('CSP injection', () => {
   beforeEach(() => {
-    // Remove any existing CSP meta tag
     document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]').forEach(el => el.remove());
   });
 
@@ -13,31 +12,56 @@ describe('CSP injection', () => {
     expect(meta).not.toBeNull();
   });
 
-  it('includes frame-ancestors none directive', () => {
+  it('includes default-src self', () => {
     initCSP();
-    const meta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-    const content = meta?.getAttribute('content') || '';
-    expect(content).toContain("frame-ancestors 'none'");
+    const content = document.querySelector('meta[http-equiv="Content-Security-Policy"]')!.getAttribute('content');
+    expect(content).toContain("default-src 'self'");
   });
 
-  it('includes object-src none directive', () => {
+  it('includes connect-src with self and LLM endpoint', () => {
+    // Default endpoint is http://localhost:11434/v1
     initCSP();
-    const meta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-    const content = meta?.getAttribute('content') || '';
+    const content = document.querySelector('meta[http-equiv="Content-Security-Policy"]')!.getAttribute('content') || '';
+    expect(content).toContain("connect-src 'self' http://localhost:11434");
+  });
+
+  it('includes object-src none', () => {
+    initCSP();
+    const content = document.querySelector('meta[http-equiv="Content-Security-Policy"]')!.getAttribute('content') || '';
     expect(content).toContain("object-src 'none'");
   });
 
-  it('includes form-action none directive', () => {
+  it('includes base-uri self', () => {
     initCSP();
-    const meta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-    const content = meta?.getAttribute('content') || '';
+    const content = document.querySelector('meta[http-equiv="Content-Security-Policy"]')!.getAttribute('content') || '';
+    expect(content).toContain("base-uri 'self'");
+  });
+
+  it('includes form-action none', () => {
+    initCSP();
+    const content = document.querySelector('meta[http-equiv="Content-Security-Policy"]')!.getAttribute('content') || '';
     expect(content).toContain("form-action 'none'");
   });
 
-  it('includes base-uri self directive', () => {
+  it('includes script-src with CDN origins', () => {
     initCSP();
-    const meta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-    const content = meta?.getAttribute('content') || '';
-    expect(content).toContain("base-uri 'self'");
+    const content = document.querySelector('meta[http-equiv="Content-Security-Policy"]')!.getAttribute('content') || '';
+    expect(content).toContain('esm.sh');
+    expect(content).toContain('cdn.jsdelivr.net');
+    expect(content).toContain('unpkg.com');
+    expect(content).toContain("'unsafe-inline'");
+  });
+
+  it('includes worker-src with blob: in dev mode (localhost)', () => {
+    initCSP();
+    const content = document.querySelector('meta[http-equiv="Content-Security-Policy"]')!.getAttribute('content') || '';
+    // In test environment, hostname is localhost, so blob: should be in worker-src
+    expect(content).toContain("worker-src 'self' blob:");
+  });
+
+  it('does NOT include unsafe-eval', () => {
+    initCSP();
+    const content = document.querySelector('meta[http-equiv="Content-Security-Policy"]')!.getAttribute('content') || '';
+    expect(content).not.toContain("'unsafe-eval'");
   });
 });
