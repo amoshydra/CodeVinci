@@ -13,6 +13,7 @@ const CDN_ORIGINS = [
   'https://esm.sh',
   'https://cdn.jsdelivr.net',
   'https://unpkg.com',
+  'https://module.local',
 ].join(' ');
 
 function applyCSP(aiEndpoint: string): void {

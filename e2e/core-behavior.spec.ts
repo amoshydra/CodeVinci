@@ -59,34 +59,36 @@ test.describe('Core app behavior', () => {
     expect(title).toBe('updated');
   });
 
-  test('import from external URL via esm.sh is allowed by CSP', async ({ page }) => {
+  test('import from external module (module.local) renders content into DOM', async ({ page }) => {
     await page.getByRole('button', { name: 'Run code' }).click();
     await page.waitForTimeout(1000);
 
-    let esmRequested = false;
-    await page.route('**/esm.sh/**', (route) => {
-      esmRequested = true;
+    let moduleRequested = false;
+    await page.route('**/module.local/**', (route) => {
+      moduleRequested = true;
       route.fulfill({
         status: 200,
         contentType: 'application/javascript',
-        body: 'export default { name: "mock-module" }',
+        body: 'export const greeting = "Hello from external module!";',
       });
     });
 
-    // Execute dynamic import from esm.sh inside the iframe
+    // Execute dynamic import from the mock module inside the iframe and render it
     const frame = page.frames().find(f => f.url() === 'about:srcdoc');
     expect(frame).toBeDefined();
 
     const result = await frame!.evaluate(async () => {
       try {
-        const mod = await import('https://esm.sh/react');
-        return { success: true, name: (mod as any).default?.name };
+        const mod = await import('https://module.local/greeting');
+        document.body.textContent = (mod as any).greeting;
+        return { success: true, rendered: document.body.textContent };
       } catch (e) {
         return { success: false, error: (e as Error).message };
       }
     });
 
-    expect(esmRequested).toBe(true);
+    expect(moduleRequested).toBe(true);
     expect(result.success).toBe(true);
+    expect(result.rendered).toBe('Hello from external module!');
   });
 });
