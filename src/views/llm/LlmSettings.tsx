@@ -40,6 +40,14 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
 
   const showConfig = enableLlm && !(needsReload && reloadReason === 'enable');
 
+  const hasChanges = showConfig && (
+    provider !== stored.provider ||
+    endpoint !== stored.apiEndpoint ||
+    (apiKeyInput !== '' && apiKeyInput !== stored.apiKey) ||
+    defaultModel !== stored.defaultModel ||
+    systemPrompt !== stored.systemPrompt
+  );
+
   const handleProviderChange = useCallback((p: LlmProvider) => {
     setProvider(p);
     const newEndpoint = getEndpointForProvider(p, endpoint);
@@ -399,7 +407,7 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
             <ActionButton size="sm" visual="secondary" onClick={onClose}>
               Cancel
             </ActionButton>
-            <ActionButton size="sm" visual="primary" onClick={handleSave}>
+            <ActionButton size="sm" visual="primary" onClick={handleSave} disabled={!hasChanges}>
               Save
             </ActionButton>
           </div>

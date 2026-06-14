@@ -99,6 +99,22 @@ test.describe('AI Integration', () => {
     await expect(page.getByText(/Reload required|update CSP/i)).toBeVisible({ timeout: 3000 });
   });
 
+  test('CSP: same origin different path does NOT trigger reload', async ({ page }) => {
+    await acceptDisclaimer(page);
+
+    await page.locator('[aria-label="Settings"]').first().click();
+    await page.waitForTimeout(500);
+
+    // Change only the path, not the origin
+    const urlInput = page.locator('input[type="text"][value*="localhost"]').first();
+    await urlInput.fill('http://localhost:11434/v2');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.waitForTimeout(500);
+
+    // No CSP reload banner — origin is the same
+    await expect(page.getByText(/Reload required|update CSP/i)).not.toBeVisible({ timeout: 2000 });
+  });
+
   test('CSP: after endpoint change and reload, CSP includes new origin', async ({ page }) => {
     await acceptDisclaimer(page);
 
