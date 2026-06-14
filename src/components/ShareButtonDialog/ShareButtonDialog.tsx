@@ -10,7 +10,14 @@ export const ShareButtonDialog = (props: ShareButtonDialogProps) => {
   const id = useId();
   const [showQrCode, setShowQrCode] = useState(false);
 
-  const shareUrl = location.href;
+  const shareUrl = (() => {
+    const url = new URL(location.href);
+    url.searchParams.delete('llm');
+    if (url.searchParams.get('mode') === 'ai-chat') {
+      url.searchParams.set('mode', 'view-edit');
+    }
+    return url.href;
+  })();
   const canShare = navigator.canShare?.({
     url: shareUrl,
   })

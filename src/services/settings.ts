@@ -8,20 +8,20 @@ export interface UseSettingsReturn {
   enableLlm: boolean;
 };
 
+const LS_LLM_KEY = 'codevinci-llm-enabled';
+
 export const useSettings = () => {
   const [params, setParams] = useState(getInitialParams)
 
-const URL_PARAM_MAP: Partial<Record<keyof UseSettingsReturn, string>> = {
-  enableLlm: "llm",
-};
-
 const updateSetting = useCallback(<K extends keyof UseSettingsReturn>(name: K, value: UseSettingsReturn[K]) => {
+  if (name === 'enableLlm') {
+    try { localStorage.setItem(LS_LLM_KEY, String(value)); } catch { /* quota exceeded */ }
+  }
   setParams(p => ({
     ...p,
     [name]: value,
   }));
-  const paramKey = URL_PARAM_MAP[name] ?? name;
-  updateParams(paramKey, value as string | boolean);
+  updateParams(name, value as string | boolean);
 }, []);
   return {
     settings: params,
@@ -32,7 +32,6 @@ const updateSetting = useCallback(<K extends keyof UseSettingsReturn>(name: K, v
 const whiteListedParams = new Set([
   "target",
   "mode",
-  "llm",
 ]);
 
 function getInitialParams (): UseSettingsReturn {
@@ -44,16 +43,22 @@ function getInitialParams (): UseSettingsReturn {
     }
     result[key] = value;
   }
+  let mode = (result.mode as SettingsMode) || "view-edit";
+  const savedLlm = (() => { try { return localStorage.getItem(LS_LLM_KEY) === 'true'; } catch { return false; } })();
+  if (mode === "ai-chat" && !savedLlm) {
+    mode = "view-edit";
+  }
   return Object.freeze({
     target: "esnext",
-    mode: "view-edit",
-    enableLlm: params.get("llm") === "true",
+    mode,
+    enableLlm: savedLlm,
     ...result,
   });
 }
 
 
 function updateParams (name: string, value: string | boolean) {
+  if (!whiteListedParams.has(name)) return;
   const url = new URL(window.location.href);
   url.searchParams.set(name, String(value).toLowerCase());
 
