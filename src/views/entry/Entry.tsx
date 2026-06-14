@@ -1,4 +1,4 @@
-import { HTMLAttributes, lazy, Suspense, useCallback, useDeferredValue, useState } from "react";
+import { HTMLAttributes, lazy, Suspense, useCallback, useEffect, useDeferredValue, useState } from "react";
 import { css } from "../../../styled-system/css";
 import { EntryContentGrid, A as GridArea } from "../../components/EntryContentGrid";
 import { Dialog } from "../../components/Dialog";
@@ -25,11 +25,18 @@ export interface EntryProps extends HTMLAttributes<HTMLElement> {
 export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props }: EntryProps) => {
   const deferredCode = useDeferredValue(code);
   const { logs, onFrameMessage, resetLog, counts } = useLogger(deferredCode);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(() => {
+    try { return sessionStorage.getItem('codevinci-reopen-settings') === 'true'; } catch { return false; }
+  });
 
   const [aiStatus, setAiStatus] = useState<LlmStatus>('idle');
   const [aiPendingCode, setAiPendingCode] = useState<string | null>(null);
   const [aiConfigured, setAiConfigured] = useState(false);
+
+  // Clear the reopen flag after reading it
+  useEffect(() => {
+    try { sessionStorage.removeItem('codevinci-reopen-settings'); } catch {}
+  }, []);
 
   const isAiChatMode = settings.mode === 'ai-chat';
   const previewCode = aiPendingCode ?? deferredCode;

@@ -81,6 +81,7 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
   }, [enableLlm, onEnableLlmChange]);
 
   const handleReload = useCallback(() => {
+    try { sessionStorage.setItem('codevinci-reopen-settings', 'true'); } catch {}
     location.reload();
   }, []);
 

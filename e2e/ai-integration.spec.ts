@@ -234,10 +234,9 @@ test.describe('AI Integration', () => {
       }
       await expect(page.locator('option[value="ai-chat"]')).toBeAttached({ timeout: 3000 });
 
-      // Step 6: Open settings again and configure
-      await page.locator('[aria-label="Settings"]').first().click();
-      await page.waitForTimeout(500);
-      await expect(page.getByText('Enabled')).toBeVisible();
+      // Settings dialog should auto-open (reopened after reload)
+      // User can now configure the endpoint/model/key
+      await expect(page.getByText('Enabled')).toBeVisible({ timeout: 3000 });
 
       // Configure endpoint (the base URL field is visible now)
       const urlInput = page.locator('input[type="text"][placeholder*="localhost"]').first();
