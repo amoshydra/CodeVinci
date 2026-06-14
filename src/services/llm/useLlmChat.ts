@@ -79,7 +79,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
       : userMessage;
 
     const cleanMessage: ChatMessage = { role: 'user', content: userMessage };
-    const trimmedMessages = trimMessages([...state.messages, cleanMessage]);
+    const trimmedMessages = trimMessages([..._store.messages, cleanMessage]);
 
     _store = {
       ..._store,
