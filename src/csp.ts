@@ -14,22 +14,26 @@ function applyCSP(aiEndpoint: string): void {
   if (existing) existing.remove();
 
   const aiOrigin = extractOrigin(aiEndpoint);
+  const selfOnly = `'self'`;
   const connectSrc = aiOrigin
-    ? `'self' ${aiOrigin}`
-    : `'self'`;
+    ? `${selfOnly} ${aiOrigin}`
+    : selfOnly;
+
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const workerSrc = isDev ? `${selfOnly} blob:` : selfOnly;
+  const devConnect = isDev ? ` ws: wss:` : '';
 
   const policy = [
     "default-src 'self'",
-    `connect-src ${connectSrc}`,
+    `connect-src ${connectSrc}${devConnect}`,
     "img-src 'self' data: blob:",
     "style-src 'self' 'unsafe-inline'",
-    "script-src 'self'",
+    "script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'",
     "font-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'none'",
-    "frame-ancestors 'none'",
-    "worker-src 'self'",
+    `worker-src ${workerSrc}`,
   ].join('; ');
 
   const meta = document.createElement('meta');

@@ -1,7 +1,6 @@
 import { HTMLAttributes, memo, useEffect } from "react";
 import { createEsbuilderHtmlTemplate } from "../../utils/esbuilder.html";
 import { withCn } from "../../utils/tailwind";
-import { onErrorFunctionName } from "./common";
 import { MessageEventFrameMessage, OnFrameMessage } from "./interface";
 import iframeScript from "./ViewerIframeScript?worker&url";
 
@@ -38,6 +37,5 @@ export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIf
 const getSrcDoc = (script: string) =>
   createEsbuilderHtmlTemplate("", `
     <script type="module" src=${JSON.stringify(iframeScript)} data-origin=${location.origin}></script>
-    <script type="module" onerror="${onErrorFunctionName}()">${script}</script>
-  `)
-  ;
+    <script type="module">${script}</script>
+  `);
