@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { css } from "../../../styled-system/css";
+import { ActionButton } from "../../components/ActionButton";
+import { ChatBubble, SettingsGear, SendArrow } from "../../components/Icons";
 import type { ChatMessage } from "../../services/llm";
 import type { LlmStatus } from "../../services/llm";
 
@@ -94,9 +96,7 @@ const LLMPanel = ({
           alignItems: 'center',
           gap: '2',
         })}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={css({ color: 'stone.400' })}>
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
+          <ChatBubble className={css({ color: 'stone.400' })} />
           <span className={css({ fontSize: 'sm', fontWeight: 'semibold', color: 'stone.200' })}>
             AI Chat
           </span>
@@ -146,43 +146,19 @@ const LLMPanel = ({
         </div>
         <div className={css({ display: 'flex', gap: '1', alignItems: 'center' })}>
           {hasOutput && (
-            <button
-              onClick={clear}
-              className={css({
-                background: 'none',
-                border: 'none',
-                color: 'stone.500',
-                cursor: 'pointer',
-                px: '1.5',
-                py: '0.5',
-                borderRadius: 'md',
-                fontSize: 'xs',
-                _hover: { color: 'stone.200', bg: 'stone.800' },
-              })}
-            >
+            <ActionButton size="xs" visual="secondary" onClick={clear}>
               Clear
-            </button>
+            </ActionButton>
           )}
-          <button
+          <ActionButton
+            size="sm"
+            outline={false}
             onClick={onSettingsClick}
-            className={css({
-              background: 'none',
-              border: 'none',
-              color: 'stone.500',
-              cursor: 'pointer',
-              p: '1',
-              borderRadius: 'md',
-              display: 'grid',
-              placeItems: 'center',
-              _hover: { color: 'stone.200', bg: 'stone.800' },
-            })}
             aria-label="AI Settings"
+          className={css({ display: 'grid', placeItems: 'center', py: '1.5' })}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </button>
+            <SettingsGear />
+          </ActionButton>
         </div>
       </div>
 
@@ -301,40 +277,20 @@ const LLMPanel = ({
               )}
             </pre>
             <div className={css({ display: 'flex', gap: '2' })}>
-              <button
-                onClick={() => acceptCode(onCodeChange)}
-                className={css({
-                  px: '3',
-                  py: '1.5',
-                  borderRadius: 'md',
-                  border: 'none',
-                  bg: 'emerald.600',
-                  color: 'white',
-                  fontSize: 'sm',
-                  fontWeight: 'medium',
-                  cursor: 'pointer',
-                  _hover: { bg: 'emerald.500' },
-                })}
-              >
-                Accept code
-              </button>
-              <button
-                onClick={rejectCode}
-                className={css({
-                  px: '3',
-                  py: '1.5',
-                  borderRadius: 'md',
-                  border: '1px solid',
-                  borderColor: 'stone.600',
-                  bg: 'transparent',
-                  color: 'stone.400',
-                  fontSize: 'sm',
-                  cursor: 'pointer',
-                  _hover: { bg: 'stone.800', color: 'stone.200' },
-                })}
-              >
-                Reject
-              </button>
+              <ActionButton
+              size="sm"
+              visual="primary"
+              onClick={() => acceptCode(onCodeChange)}
+            >
+              Accept code
+            </ActionButton>
+            <ActionButton
+              size="sm"
+              visual="secondary"
+              onClick={rejectCode}
+            >
+              Reject
+            </ActionButton>
             </div>
           </div>
         )}
@@ -357,7 +313,7 @@ const LLMPanel = ({
         py: '2',
         display: 'flex',
         gap: '2',
-        alignItems: 'flex-end',
+        alignItems: 'stretch',
         flexShrink: '0',
         borderTop: '1px solid',
         borderColor: 'stone.800',
@@ -378,7 +334,7 @@ const LLMPanel = ({
           className={css({
             flex: '1',
             px: '3',
-            py: '2',
+            py: '1.5',
             borderRadius: 'md',
             border: '1px solid',
             borderColor: 'stone.600',
@@ -402,31 +358,15 @@ const LLMPanel = ({
             },
           })}
         />
-        <button
+        <ActionButton
+          size="sm"
+          visual="primary"
           onClick={handleSend}
           disabled={!canSend}
-          className={css({
-            px: '3',
-            py: '2',
-            borderRadius: 'md',
-            border: 'none',
-            background: canSend ? 'sky.600' : 'stone.700',
-            color: canSend ? 'white' : 'stone.500',
-            cursor: canSend ? 'pointer' : 'not-allowed',
-            fontSize: 'sm',
-            fontWeight: 'medium',
-            transition: 'background 0.15s',
-            flexShrink: '0',
-            display: 'grid',
-            placeItems: 'center',
-            _hover: canSend ? { bg: 'sky.500' } : undefined,
-          })}
+          className={css({ display: 'grid', placeItems: 'center', py: '1.5' })}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13" />
-            <polygon points="22 2 15 22 11 13 2 9 22 2" />
-          </svg>
-        </button>
+          <SendArrow />
+        </ActionButton>
       </div>
 
     </div>
