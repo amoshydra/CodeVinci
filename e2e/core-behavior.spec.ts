@@ -25,7 +25,7 @@ test.describe('Core app behavior', () => {
 
   test('after accepting disclaimer, preview viewer is rendered', async ({ page }) => {
     await disclaimerAcceptAndWait(page);
-    const iframe = page.locator('iframe[sandbox="allow-scripts"]');
+    const iframe = page.locator('iframe[sandbox*="allow-scripts"]');
     await expect(iframe).toBeAttached({ timeout: 3000 });
   });
 
@@ -173,6 +173,44 @@ test.describe('Core app behavior', () => {
 
       // QR code generation should fail due to data exceeding capacity
       await expect(page.getByText(/Failed to generate QR|too long|too large|input string/i)).toBeVisible({ timeout: 5000 });
+    });
+  });
+
+  test.describe('Mock localStorage persistence', () => {
+    test.beforeEach(async ({ page }) => {
+      await disclaimerAcceptAndWait(page);
+    });
+
+    test('survives code edit (srcdoc reload)', async ({ page }) => {
+      await page.selectOption('select', 'view-edit');
+
+      // Set a value in the iframe's mock localStorage
+      const frame1 = page.frames().find(f => f.url() === 'about:srcdoc');
+      expect(frame1).toBeDefined();
+      await page.waitForTimeout(1000);
+
+      await frame1!.evaluate(() => {
+        localStorage.setItem('persist-key', 'persist-value');
+        localStorage.setItem('another-key', 'another-value');
+      });
+
+      const val1 = await frame1!.evaluate(() => localStorage.getItem('persist-key'));
+      expect(val1).toBe('persist-value');
+
+      // Edit code to trigger srcdoc reload
+      await focusAndClearEditor(page);
+      await page.keyboard.type('document.title = "after edit"', { delay: 10 });
+      await page.waitForTimeout(2000);
+
+      // New iframe — localStorage should have persisted
+      const frame2 = page.frames().find(f => f.url() === 'about:srcdoc');
+      expect(frame2).toBeDefined();
+
+      const val2 = await frame2!.evaluate(() => localStorage.getItem('persist-key'));
+      expect(val2).toBe('persist-value');
+
+      const another = await frame2!.evaluate(() => localStorage.getItem('another-key'));
+      expect(another).toBe('another-value');
     });
   });
 });
