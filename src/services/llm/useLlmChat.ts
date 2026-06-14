@@ -121,7 +121,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
                 ...prev,
                 status: 'idle',
                 streamingText: '',
-                messages: newMessages.slice(-50),
+                messages: newMessages,
               };
             });
           };

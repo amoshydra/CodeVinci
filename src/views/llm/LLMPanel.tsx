@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { css } from "../../../styled-system/css";
 import { ActionButton } from "../../components/ActionButton";
 import { ChatBubble, SettingsGear, SendArrow } from "../../components/Icons";
+import { Dialog } from "../../components/Dialog";
 import type { ChatMessage } from "../../services/llm";
 import type { LlmStatus } from "../../services/llm";
 
@@ -41,6 +42,7 @@ const LLMPanel = ({
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const codeSnapshotRef = useRef<string | null>(null);
+  const [showDivergentWarning, setShowDivergentWarning] = useState(false);
 
   const hasOutput = messages.length > 0 || !!streamingText || !!lastError || !!pendingCode;
 
@@ -286,7 +288,8 @@ const LLMPanel = ({
               visual="primary"
               onClick={() => {
                 if (codeSnapshotRef.current !== null && code !== codeSnapshotRef.current) {
-                  if (!window.confirm('Editor code changed since AI generated this. Accepting will overwrite your changes. Continue?')) return;
+                  setShowDivergentWarning(true);
+                  return;
                 }
                 acceptCode(onCodeChange);
               }}
@@ -378,6 +381,27 @@ const LLMPanel = ({
         </ActionButton>
       </div>
 
+      <Dialog
+        id="divergent-code-warning"
+        title="Code Changed"
+        isOpen={showDivergentWarning}
+        onClose={() => setShowDivergentWarning(false)}
+      >
+        <p className={css({ fontSize: 'sm', color: 'stone.300', mb: '4' })}>
+          Editor code changed since AI generated this. Accepting will overwrite your changes. Continue?
+        </p>
+        <div className={css({ display: 'flex', gap: '2', justifyContent: 'flex-end' })}>
+          <ActionButton size="sm" visual="secondary" onClick={() => setShowDivergentWarning(false)}>
+            Cancel
+          </ActionButton>
+          <ActionButton size="sm" visual="primary" onClick={() => {
+            setShowDivergentWarning(false);
+            acceptCode(onCodeChange);
+          }}>
+            Overwrite
+          </ActionButton>
+        </div>
+      </Dialog>
     </div>
   );
 };
