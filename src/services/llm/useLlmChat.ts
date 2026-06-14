@@ -4,6 +4,7 @@ import { llmConfigStore, type LlmTool, type LlmToolCall, CODE_GENERATION_TOOL } 
 import type { ChatMessage } from './client';
 
 const MAX_MESSAGES = 50;
+const MIN_STREAM_MS = 800;
 
 export type LlmStatus = 'idle' | 'streaming' | 'error';
 
@@ -27,6 +28,8 @@ export function useLlmChat(initialSystemPrompt?: string) {
   });
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const streamStartRef = useRef(0);
+  const streamTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const send = useCallback(async (userMessage: string, tools?: LlmTool[]) => {
     if (!llmConfigStore.isConfigured()) {
@@ -63,6 +66,8 @@ export function useLlmChat(initialSystemPrompt?: string) {
 
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
+    if (streamTimeoutRef.current) clearTimeout(streamTimeoutRef.current);
+    streamStartRef.current = Date.now();
 
     const messages: ChatMessage[] = [systemMessage, ...existingMessages];
 
@@ -75,18 +80,26 @@ export function useLlmChat(initialSystemPrompt?: string) {
           }));
         },
         onComplete: (fullResponse: string) => {
-          setState((prev) => {
-            const hasToolCalls = !!prev.toolCalls?.length;
-            const newMessages = hasToolCalls
-              ? prev.messages
-              : [...prev.messages, { role: 'assistant' as const, content: fullResponse }].slice(-MAX_MESSAGES);
-            return {
-              ...prev,
-              status: 'idle',
-              streamingText: '',
-              messages: newMessages,
-            };
-          });
+          const applyResult = () => {
+            setState((prev) => {
+              const hasToolCalls = !!prev.toolCalls?.length;
+              const newMessages = hasToolCalls
+                ? prev.messages
+                : [...prev.messages, { role: 'assistant' as const, content: fullResponse }].slice(-MAX_MESSAGES);
+              return {
+                ...prev,
+                status: 'idle',
+                streamingText: '',
+                messages: newMessages,
+              };
+            });
+          };
+          const elapsed = Date.now() - streamStartRef.current;
+          if (elapsed < MIN_STREAM_MS) {
+            streamTimeoutRef.current = setTimeout(applyResult, MIN_STREAM_MS - elapsed);
+          } else {
+            applyResult();
+          }
         },
         onError: (error: Error) => {
           setState((prev) => ({
@@ -161,6 +174,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
   useEffect(() => {
     return () => {
       abortControllerRef.current?.abort();
+      if (streamTimeoutRef.current) clearTimeout(streamTimeoutRef.current);
     };
   }, []);
 
