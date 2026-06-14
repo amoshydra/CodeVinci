@@ -6,6 +6,7 @@ import type { ChatMessage } from "../../services/llm";
 import type { LlmStatus } from "../../services/llm";
 
 export interface LLMPanelProps {
+  code?: string;
   onCodeChange?: (code: string) => void;
   onSettingsClick: () => void;
   errorCount?: number;
@@ -14,7 +15,7 @@ export interface LLMPanelProps {
   messages: ChatMessage[];
   lastError: string | null;
   pendingCode: string | null;
-  send: (userMessage: string) => void;
+  send: (userMessage: string, options?: { code?: string }) => void;
   acceptCode: (onCodeChange?: (code: string) => void) => void;
   rejectCode: () => void;
   clear: () => void;
@@ -22,6 +23,7 @@ export interface LLMPanelProps {
 }
 
 const LLMPanel = ({
+  code,
   onCodeChange,
   onSettingsClick,
   errorCount = 0,
@@ -38,6 +40,7 @@ const LLMPanel = ({
 }: LLMPanelProps) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const codeSnapshotRef = useRef<string | null>(null);
 
   const hasOutput = messages.length > 0 || !!streamingText || !!lastError || !!pendingCode;
 
@@ -49,9 +52,10 @@ const LLMPanel = ({
 
   const handleSend = useCallback(() => {
     if (!canSend) return;
-    send(input.trim());
+    codeSnapshotRef.current = code ?? null;
+    send(input.trim(), { code });
     setInput("");
-  }, [input, canSend, send]);
+  }, [input, canSend, send, code]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -280,7 +284,12 @@ const LLMPanel = ({
               <ActionButton
               size="sm"
               visual="primary"
-              onClick={() => acceptCode(onCodeChange)}
+              onClick={() => {
+                if (codeSnapshotRef.current !== null && code !== codeSnapshotRef.current) {
+                  if (!window.confirm('Editor code changed since AI generated this. Accepting will overwrite your changes. Continue?')) return;
+                }
+                acceptCode(onCodeChange);
+              }}
             >
               Accept code
             </ActionButton>

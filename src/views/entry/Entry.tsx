@@ -181,6 +181,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
         {settings.enableLlm && isAiChatMode && (
           <Suspense fallback={null}>
             <LLMPanel
+              code={code}
               onCodeChange={handleLLMCodeChange}
               onSettingsClick={() => setSettingsOpen(true)}
               errorCount={counts.error}

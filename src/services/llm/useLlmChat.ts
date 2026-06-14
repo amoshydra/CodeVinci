@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { llmClient } from './client';
-import { llmConfigStore, type LlmTool, type LlmToolCall, CODE_GENERATION_TOOL } from './config';
+import { llmConfigStore, type LlmToolCall, CODE_GENERATION_TOOL } from './config';
 import type { ChatMessage } from './client';
 
-const MAX_MESSAGES = 50;
+const MAX_HISTORY_CHARS = 4000;
+const CODE_TRUNCATE_LENGTH = 2000;
 const MIN_STREAM_MS = 800;
 
 export type LlmStatus = 'idle' | 'streaming' | 'error';
@@ -15,6 +16,18 @@ export interface LlmState {
   lastError: string | null;
   toolCalls: LlmToolCall[] | null;
   pendingCode: string | null;
+}
+
+function trimMessages(messages: ChatMessage[]): ChatMessage[] {
+  if (messages.length <= 1) return messages;
+  let total = messages.reduce((sum, m) => sum + m.content.length, 0);
+  if (total <= MAX_HISTORY_CHARS) return messages;
+  const result = [...messages];
+  while (total > MAX_HISTORY_CHARS && result.length > 1) {
+    const removed = result.shift()!;
+    total -= removed.content.length;
+  }
+  return result;
 }
 
 export function useLlmChat(initialSystemPrompt?: string) {
@@ -30,8 +43,11 @@ export function useLlmChat(initialSystemPrompt?: string) {
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamStartRef = useRef(0);
   const streamTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
+  const streamingTextRef = useRef('');
+  const toolCallReasoningRef = useRef('');
 
-  const send = useCallback(async (userMessage: string, tools?: LlmTool[]) => {
+  const send = useCallback(async (userMessage: string, options?: { code?: string }) => {
     if (!llmConfigStore.isConfigured()) {
       setState((prev) => ({
         ...prev,
@@ -42,21 +58,20 @@ export function useLlmChat(initialSystemPrompt?: string) {
     }
 
     const config = llmConfigStore.config;
-    const systemMessage: ChatMessage = {
-      role: 'system',
-      content: initialSystemPrompt || config.systemPrompt,
-    };
+    const codeSnapshot = options?.code ?? null;
 
-    const newUserMessage: ChatMessage = {
-      role: 'user',
-      content: userMessage,
-    };
+    // Build user message for API with current code context
+    const apiUserContent = codeSnapshot
+      ? `Current editor code:\n\`\`\`js\n${codeSnapshot.slice(0, CODE_TRUNCATE_LENGTH)}${codeSnapshot.length > CODE_TRUNCATE_LENGTH ? '\n// ... truncated' : ''}\n\`\`\`\n\n${userMessage}`
+      : userMessage;
 
-    const existingMessages = [...state.messages, newUserMessage].slice(-MAX_MESSAGES);
+    // Store clean message in local history (without code injection)
+    const cleanMessage: ChatMessage = { role: 'user', content: userMessage };
+    const trimmedMessages = trimMessages([...state.messages, cleanMessage]);
 
     setState((prev) => ({
       ...prev,
-      messages: existingMessages,
+      messages: trimmedMessages,
       status: 'streaming',
       streamingText: '',
       lastError: null,
@@ -68,29 +83,45 @@ export function useLlmChat(initialSystemPrompt?: string) {
     abortControllerRef.current = new AbortController();
     if (streamTimeoutRef.current) clearTimeout(streamTimeoutRef.current);
     streamStartRef.current = Date.now();
+    streamingTextRef.current = '';
+    toolCallReasoningRef.current = '';
 
-    const messages: ChatMessage[] = [systemMessage, ...existingMessages];
+    const requestId = ++requestIdRef.current;
+
+    // Build API messages: system prompt + clean history + current message with code
+    const systemMessage: ChatMessage = {
+      role: 'system',
+      content: initialSystemPrompt || config.systemPrompt,
+    };
+    const apiMessages: ChatMessage[] = [
+      systemMessage,
+      ...trimmedMessages.slice(0, -1),
+      { role: 'user', content: apiUserContent },
+    ];
 
     try {
-      await llmClient.sendMessage(messages, {
+      await llmClient.sendMessage(apiMessages, {
         onToken: (token: string) => {
+          if (requestIdRef.current !== requestId) return;
+          streamingTextRef.current += token;
           setState((prev) => ({
             ...prev,
             streamingText: prev.streamingText + token,
           }));
         },
         onComplete: (fullResponse: string) => {
+          if (requestIdRef.current !== requestId) return;
           const applyResult = () => {
             setState((prev) => {
               const hasToolCalls = !!prev.toolCalls?.length;
               const newMessages = hasToolCalls
-                ? prev.messages
-                : [...prev.messages, { role: 'assistant' as const, content: fullResponse }].slice(-MAX_MESSAGES);
+                ? [...prev.messages, { role: 'assistant' as const, content: toolCallReasoningRef.current || 'Generated code via tool call.' }]
+                : [...prev.messages, { role: 'assistant' as const, content: fullResponse }];
               return {
                 ...prev,
                 status: 'idle',
                 streamingText: '',
-                messages: newMessages,
+                messages: newMessages.slice(-50),
               };
             });
           };
@@ -102,6 +133,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
           }
         },
         onError: (error: Error) => {
+          if (requestIdRef.current !== requestId) return;
           setState((prev) => ({
             ...prev,
             status: 'error',
@@ -110,6 +142,8 @@ export function useLlmChat(initialSystemPrompt?: string) {
           }));
         },
         onToolCalls: (toolCalls: LlmToolCall[]) => {
+          if (requestIdRef.current !== requestId) return;
+          toolCallReasoningRef.current = streamingTextRef.current;
           const codeCall = toolCalls.find((t) => t.name === 'set_code');
           const pendingCode =
             codeCall?.arguments && typeof codeCall.arguments.code === 'string'
@@ -121,8 +155,9 @@ export function useLlmChat(initialSystemPrompt?: string) {
             pendingCode,
           }));
         },
-      }, tools || [CODE_GENERATION_TOOL]);
+      }, [CODE_GENERATION_TOOL]);
     } catch (error) {
+      if (requestIdRef.current !== requestId) return;
       setState((prev) => ({
         ...prev,
         status: 'error',
@@ -140,8 +175,6 @@ export function useLlmChat(initialSystemPrompt?: string) {
       ...prev,
       toolCalls: null,
       pendingCode: null,
-      messages: [],
-      streamingText: '',
       status: 'idle',
     }));
   }, [state.pendingCode]);
