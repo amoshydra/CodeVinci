@@ -1,5 +1,4 @@
-import { HTMLAttributes, memo, useEffect } from "react";
-import { createEsbuilderHtmlTemplate } from "../../utils/esbuilder.html";
+import { HTMLAttributes, memo, useCallback, useEffect, useRef } from "react";
 import { withCn } from "../../utils/tailwind";
 import { MessageEventFrameMessage, OnFrameMessage } from "./interface";
 import iframeScript from "./ViewerIframeScript?worker&url";
@@ -10,7 +9,7 @@ export interface ViewerIframeProps extends HTMLAttributes<HTMLElement> {
 }
 
 export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIframeProps) => {
-  const srcDoc = getSrcDoc(script);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const handler = (event: MessageEvent<MessageEventFrameMessage>) => {
@@ -25,17 +24,22 @@ export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIf
     }
   }, []);
 
+  const handleLoad = useCallback(() => {
+    iframeRef.current?.contentWindow?.postMessage({
+      _id: 'codevinci-init',
+      scriptUrl: iframeScript,
+      code: script,
+      origin: location.origin,
+    }, '*');
+  }, [script]);
+
   return (
     <iframe
+      ref={iframeRef}
       {...withCn(props)}
       sandbox="allow-scripts"
-      srcDoc={srcDoc}
+      src="/viewer.html"
+      onLoad={handleLoad}
     />
   );
 });
-
-const getSrcDoc = (script: string) =>
-  createEsbuilderHtmlTemplate("", `
-    <script type="module" src=${JSON.stringify(iframeScript)} data-origin=${location.origin}></script>
-    <script type="module">${script}</script>
-  `);
