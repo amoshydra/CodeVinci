@@ -18,50 +18,31 @@ test.describe('Core app behavior', () => {
   test('accepting disclaimer, then refreshing, does not show warning again', async ({ page }) => {
     await page.getByRole('button', { name: 'Run code' }).click();
     await page.waitForTimeout(300);
-
     await page.reload();
     await page.waitForTimeout(500);
-
     await expect(page.getByText('Warning!')).not.toBeVisible();
   });
 
   test('after accepting disclaimer, preview viewer is rendered', async ({ page }) => {
-    await page.getByRole('button', { name: 'Run code' }).click();
-    await page.waitForTimeout(500);
-
+    await disclaimerAcceptAndWait(page);
     const iframe = page.locator('iframe[sandbox="allow-scripts"]');
     await expect(iframe).toBeAttached({ timeout: 3000 });
   });
 
   test('editing code updates the preview viewer', async ({ page }) => {
-    await page.getByRole('button', { name: 'Run code' }).click();
-    await page.waitForTimeout(1000);
-
-    // Focus the CodeMirror editor
-    const editor = page.locator('.cm-content').first();
-    await expect(editor).toBeVisible({ timeout: 3000 });
-    await editor.click();
-    await page.waitForTimeout(200);
-
-    // Clear and type new code
-    await page.keyboard.press('Control+a');
-    await page.waitForTimeout(100);
+    await disclaimerAcceptAndWait(page);
+    await focusAndClearEditor(page);
     await page.keyboard.type('document.title = "updated"', { delay: 20 });
-
-    // Wait for srcdoc to reload the iframe with new code
     await page.waitForTimeout(2000);
 
-    // Re-acquire frame reference (stale after srcdoc reload)
     const frame = page.frames().find(f => f.url() === 'about:srcdoc');
     expect(frame).toBeDefined();
-
     const title = await frame!.evaluate(() => document.title);
     expect(title).toBe('updated');
   });
 
   test('import from external module (module.local) renders content into DOM', async ({ page }) => {
-    await page.getByRole('button', { name: 'Run code' }).click();
-    await page.waitForTimeout(1000);
+    await disclaimerAcceptAndWait(page);
 
     let moduleRequested = false;
     await page.route('**/module.local/**', (route) => {
@@ -73,7 +54,6 @@ test.describe('Core app behavior', () => {
       });
     });
 
-    // Execute dynamic import from the mock module inside the iframe and render it
     const frame = page.frames().find(f => f.url() === 'about:srcdoc');
     expect(frame).toBeDefined();
 
@@ -91,4 +71,101 @@ test.describe('Core app behavior', () => {
     expect(result.success).toBe(true);
     expect(result.rendered).toBe('Hello from external module!');
   });
+
+  test.describe('View mode switching', () => {
+    test.beforeEach(async ({ page }) => {
+      await disclaimerAcceptAndWait(page);
+    });
+
+    test('default mode is view-edit (both editor and iframe visible)', async ({ page }) => {
+      await expect(page.locator('.cm-editor').first()).toBeVisible({ timeout: 3000 });
+      await expect(page.locator('iframe')).toBeAttached({ timeout: 3000 });
+    });
+
+    test('switch to view only mode hides the editor', async ({ page }) => {
+      await page.selectOption('select', 'view');
+      await page.waitForTimeout(500);
+      await expect(page.locator('.cm-editor').first()).not.toBeVisible();
+      await expect(page.locator('iframe')).toBeAttached();
+    });
+
+    test('switch to edit only mode hides the viewer iframe', async ({ page }) => {
+      await page.selectOption('select', 'edit');
+      await page.waitForTimeout(500);
+      await expect(page.locator('.cm-editor').first()).toBeVisible({ timeout: 3000 });
+      // In edit mode, the iframe should not exist in the DOM
+      expect(page.locator('iframe')).toHaveCount(0);
+    });
+
+    test('switch to view, refresh, mode persists', async ({ page }) => {
+      await page.selectOption('select', 'view');
+      await page.waitForTimeout(300);
+      expect(page.url()).toContain('mode=view');
+      await page.reload();
+      await page.waitForTimeout(500);
+      expect(page.url()).toContain('mode=view');
+      await expect(page.locator('.cm-editor').first()).not.toBeVisible();
+    });
+  });
+
+  test.describe('Code execution output', () => {
+    test.beforeEach(async ({ page }) => {
+      await disclaimerAcceptAndWait(page);
+    });
+
+    test('console.log output appears in bottom bar logger', async ({ page }) => {
+      await focusAndClearEditor(page);
+      await page.keyboard.type('console.log("hello world")', { delay: 20 });
+      await page.waitForTimeout(2000);
+
+      // Open the logger panel
+      await page.locator('[data-grid-area="button"]').click();
+      await page.waitForTimeout(500);
+
+      // The logger renders JSON.stringify results: "hello world" → '"hello world"'
+      await expect(page.getByText('hello world').first()).toBeVisible({ timeout: 3000 });
+    });
+
+    test('error in code shows in logger', async ({ page }) => {
+      await focusAndClearEditor(page);
+      await page.keyboard.type('throw new Error("test error 123")', { delay: 20 });
+      await page.waitForTimeout(2000);
+
+      // Open the logger
+      await page.locator('[data-grid-area="button"]').click();
+      await page.waitForTimeout(500);
+
+      // Error objects are rendered as JSON.stringify({name,message})
+      await expect(page.locator('text=test error 123').first()).toBeVisible({ timeout: 3000 });
+    });
+  });
+
+  test('share dialog opens with a URL', async ({ page }) => {
+    await disclaimerAcceptAndWait(page);
+
+    // Click the Share button in the top bar
+    const shareButton = page.locator('button', { hasText: 'Share' }).first();
+    await shareButton.click();
+    await page.waitForTimeout(500);
+
+    // The Share dialog has an <h2>Share</h2> heading when open
+    await expect(page.getByRole('heading', { name: 'Share' })).toBeVisible({ timeout: 3000 });
+
+    // The dialog contains a textarea with the share URL
+    await expect(page.locator('textarea[aria-label="url"]')).toHaveValue(/http/);
+  });
 });
+
+async function disclaimerAcceptAndWait(page: import('@playwright/test').Page) {
+  await page.getByRole('button', { name: 'Run code' }).click();
+  await page.waitForTimeout(1000);
+}
+
+async function focusAndClearEditor(page: import('@playwright/test').Page) {
+  const editor = page.locator('.cm-content').first();
+  await expect(editor).toBeVisible({ timeout: 3000 });
+  await editor.click();
+  await page.waitForTimeout(200);
+  await page.keyboard.press('Control+a');
+  await page.waitForTimeout(100);
+}
