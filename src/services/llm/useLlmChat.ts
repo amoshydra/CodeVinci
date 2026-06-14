@@ -3,8 +3,7 @@ import { llmClient } from './client';
 import { llmConfigStore, type LlmToolCall, CODE_GENERATION_TOOL } from './config';
 import type { ChatMessage } from './client';
 
-const MAX_HISTORY_CHARS = 4000;
-const CODE_TRUNCATE_LENGTH = 2000;
+const MAX_HISTORY_CHARS = 16000;
 const MIN_STREAM_MS = 800;
 
 export type LlmStatus = 'idle' | 'streaming' | 'error';
@@ -76,7 +75,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
     const codeSnapshot = options?.code ?? null;
 
     const apiUserContent = codeSnapshot
-      ? `Current editor code:\n\`\`\`js\n${codeSnapshot.slice(0, CODE_TRUNCATE_LENGTH)}${codeSnapshot.length > CODE_TRUNCATE_LENGTH ? '\n// ... truncated' : ''}\n\`\`\`\n\n${userMessage}`
+      ? `Current editor code:\n\`\`\`js\n${codeSnapshot}\n\`\`\`\n\n${userMessage}`
       : userMessage;
 
     const cleanMessage: ChatMessage = { role: 'user', content: userMessage };

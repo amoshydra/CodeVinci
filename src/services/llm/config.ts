@@ -71,7 +71,7 @@ export function getDefaultLLMConfig(): LLMConfig {
     connectionValid: false,
     temperature: 0.7,
     topP: 0.95,
-    maxTokens: 4096,
+    maxTokens: 8192,
     cspOrigin: '',
   };
 }
