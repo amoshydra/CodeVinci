@@ -3,6 +3,15 @@ import { withCn } from "../../utils/tailwind";
 import { MessageEventFrameMessage, OnFrameMessage } from "./interface";
 import iframeScript from "./ViewerIframeScript?worker&url";
 
+function postCode(iframe: HTMLIFrameElement | null, code: string) {
+  iframe?.contentWindow?.postMessage({
+    _id: 'codevinci-init',
+    scriptUrl: iframeScript,
+    code,
+    origin: location.origin,
+  }, '*');
+}
+
 export interface ViewerIframeProps extends HTMLAttributes<HTMLElement> {
   script: string;
   onFrameMessage: OnFrameMessage;
@@ -11,6 +20,7 @@ export interface ViewerIframeProps extends HTMLAttributes<HTMLElement> {
 export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIframeProps) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Forward messages from the iframe to the parent
   useEffect(() => {
     const handler = (event: MessageEvent<MessageEventFrameMessage>) => {
       const { _id, ...rest } = event.data;
@@ -24,13 +34,14 @@ export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIf
     }
   }, []);
 
+  // Send code to iframe whenever it changes
+  useEffect(() => {
+    postCode(iframeRef.current, script);
+  }, [script]);
+
+  // Also send on initial iframe load (effect may fire before iframe is ready)
   const handleLoad = useCallback(() => {
-    iframeRef.current?.contentWindow?.postMessage({
-      _id: 'codevinci-init',
-      scriptUrl: iframeScript,
-      code: script,
-      origin: location.origin,
-    }, '*');
+    postCode(iframeRef.current, script);
   }, [script]);
 
   return (
