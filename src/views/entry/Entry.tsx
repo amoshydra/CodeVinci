@@ -181,9 +181,8 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
         {settings.enableLlm && isAiChatMode && (
           <Suspense fallback={null}>
             <LLMPanel
-              enableLlm={settings.enableLlm}
-              onEnableLlmChange={(v) => onSettingUpdate("enableLlm", v)}
               onCodeChange={handleLLMCodeChange}
+              onSettingsClick={() => setSettingsOpen(true)}
               errorCount={counts.error}
               status={status}
               streamingText={streamingText}

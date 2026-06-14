@@ -2,13 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { css } from "../../../styled-system/css";
 import type { ChatMessage } from "../../services/llm";
 import type { LlmStatus } from "../../services/llm";
-import { Dialog } from "../../components/Dialog";
-import { LlmSettings } from "./LlmSettings";
 
 export interface LLMPanelProps {
-  enableLlm: boolean;
-  onEnableLlmChange: (enabled: boolean) => void;
   onCodeChange?: (code: string) => void;
+  onSettingsClick: () => void;
   errorCount?: number;
   status: LlmStatus;
   streamingText: string;
@@ -23,9 +20,8 @@ export interface LLMPanelProps {
 }
 
 const LLMPanel = ({
-  enableLlm,
-  onEnableLlmChange,
   onCodeChange,
+  onSettingsClick,
   errorCount = 0,
   status,
   streamingText,
@@ -39,9 +35,7 @@ const LLMPanel = ({
   isConfigured,
 }: LLMPanelProps) => {
   const [input, setInput] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const hasOutput = messages.length > 0 || !!streamingText || !!lastError || !!pendingCode;
 
@@ -170,7 +164,7 @@ const LLMPanel = ({
             </button>
           )}
           <button
-            onClick={() => setShowSettings(true)}
+            onClick={onSettingsClick}
             className={css({
               background: 'none',
               border: 'none',
@@ -369,7 +363,6 @@ const LLMPanel = ({
         borderColor: 'stone.800',
       })}>
         <textarea
-          ref={inputRef}
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -436,19 +429,6 @@ const LLMPanel = ({
         </button>
       </div>
 
-      {/* Settings dialog */}
-      <Dialog
-        id="llm-settings"
-        title="AI Settings"
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-      >
-        <LlmSettings
-          enableLlm={enableLlm}
-          onEnableLlmChange={onEnableLlmChange}
-          onClose={() => setShowSettings(false)}
-        />
-      </Dialog>
     </div>
   );
 };
