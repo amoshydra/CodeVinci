@@ -5,7 +5,10 @@ import { ShareButtonDialogQrBoxProps } from "./interface";
 
 const QRCodeCanvas = lazy(() => import('qrcode.react').then(m => ({ default: m.QRCodeCanvas })));
 
-export const ShareButtonDialogQrBox = ({ value }: ShareButtonDialogQrBoxProps) => {
+export const ShareButtonDialogQrBox = ({ value, visible }: ShareButtonDialogQrBoxProps) => {
+  if (!visible) {
+    return null;
+  }
   return (
     <div
       className={css({

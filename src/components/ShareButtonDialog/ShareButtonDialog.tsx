@@ -1,4 +1,4 @@
-import { ReactNode, useId } from "react";
+import { ReactNode, useId, useState } from "react";
 import { css } from "../../../styled-system/css";
 import { ActionButton } from "../ActionButton";
 import { Dialog, type DialogProps } from "../Dialog";
@@ -8,6 +8,7 @@ export interface ShareButtonDialogProps extends Omit<DialogProps, "id" | "childr
 
 export const ShareButtonDialog = (props: ShareButtonDialogProps) => {
   const id = useId();
+  const [showQrCode, setShowQrCode] = useState(false);
 
   const shareUrl = location.href;
   const canShare = navigator.canShare?.({
@@ -18,6 +19,7 @@ export const ShareButtonDialog = (props: ShareButtonDialogProps) => {
     navigator.clipboard.writeText(shareUrl)
   };
   const handleShare = () => {
+    setShowQrCode(true);
     navigator.share({
       url: shareUrl,
     })
@@ -38,7 +40,7 @@ export const ShareButtonDialog = (props: ShareButtonDialogProps) => {
       >
         <ShareButtonDialogQrBox
           value={shareUrl}
-          visible={props.isOpen}
+          visible={showQrCode}
         />
 
         <ShareInputBox value={shareUrl} />
