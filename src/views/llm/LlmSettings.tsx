@@ -407,3 +407,5 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
     </div>
   );
 };
+
+export default LlmSettings;

@@ -2,7 +2,6 @@ import { HTMLAttributes, lazy, Suspense, useCallback, useDeferredValue, useState
 import { css } from "../../../styled-system/css";
 import { EntryContentGrid, A as GridArea } from "../../components/EntryContentGrid";
 import { Dialog } from "../../components/Dialog";
-import { useLlmChat } from "../../services/llm";
 import { SettingsMode, UseSettingsReturn } from "../../services/settings";
 import { useLogger } from "../../services/useLogger";
 import { esbuildLaunchInNewWindow } from "../../utils/esbuilder.opener";
@@ -11,9 +10,10 @@ import { BottomBar } from "../bottom-bar/BottomBar";
 import { Editor } from "../editor/Editor";
 import { TopBar } from "../top-bar/TopBar";
 import { Viewer } from "../viewer/Viewer";
-import { LlmSettings } from "../llm/LlmSettings";
+import type { LlmStatus } from "../../services/llm";
 
 const LLMPanel = lazy(() => import("../llm/LLMPanel"));
+const LlmSettings = lazy(() => import("../llm/LlmSettings"));
 
 export interface EntryProps extends HTMLAttributes<HTMLElement> {
   code: string;
@@ -27,27 +27,18 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
   const { logs, onFrameMessage, resetLog, counts } = useLogger(deferredCode);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const {
-    status,
-    streamingText,
-    messages,
-    lastError,
-    pendingCode,
-    send,
-    acceptCode,
-    rejectCode,
-    clear,
-    isConfigured,
-  } = useLlmChat();
+  const [aiStatus, setAiStatus] = useState<LlmStatus>('idle');
+  const [aiPendingCode, setAiPendingCode] = useState<string | null>(null);
+  const [aiConfigured, setAiConfigured] = useState(false);
 
   const isAiChatMode = settings.mode === 'ai-chat';
-  const previewCode = pendingCode ?? deferredCode;
-  const showPendingLabel = !!pendingCode && !isAiChatMode;
+  const previewCode = aiPendingCode ?? deferredCode;
+  const showPendingLabel = !!aiPendingCode && !isAiChatMode;
 
-  const aiDotState = !isConfigured ? 'hidden' :
-    status === 'error' ? 'error' :
-    status === 'streaming' ? 'streaming' :
-    pendingCode ? 'pending' :
+  const aiDotState = !aiConfigured ? 'hidden' :
+    aiStatus === 'error' ? 'error' :
+    aiStatus === 'streaming' ? 'streaming' :
+    aiPendingCode ? 'pending' :
     'hidden';
 
   const handleViewModeChange = useCallback((newViewMode: string) => {
@@ -177,16 +168,9 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               onCodeChange={handleLLMCodeChange}
               onSettingsClick={() => setSettingsOpen(true)}
               errorCount={counts.error}
-              status={status}
-              streamingText={streamingText}
-              messages={messages}
-              lastError={lastError}
-              pendingCode={pendingCode}
-              send={send}
-              acceptCode={acceptCode}
-              rejectCode={rejectCode}
-              clear={clear}
-              isConfigured={isConfigured}
+              onStatusChange={setAiStatus}
+              onPendingCodeChange={setAiPendingCode}
+              onConfiguredChange={setAiConfigured}
               data-grid-area={GridArea.chat_}
             />
           </Suspense>
@@ -200,11 +184,13 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
       >
-        <LlmSettings
-          enableLlm={settings.enableLlm}
-          onEnableLlmChange={(v) => onSettingUpdate("enableLlm", v)}
-          onClose={() => setSettingsOpen(false)}
-        />
+        <Suspense fallback={null}>
+          <LlmSettings
+            enableLlm={settings.enableLlm}
+            onEnableLlmChange={(v) => onSettingUpdate("enableLlm", v)}
+            onClose={() => setSettingsOpen(false)}
+          />
+        </Suspense>
       </Dialog>
     </div>
   );

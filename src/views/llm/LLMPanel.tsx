@@ -3,24 +3,16 @@ import { css } from "../../../styled-system/css";
 import { ActionButton } from "../../components/ActionButton";
 import { ChatBubble, SettingsGear, SendArrow } from "../../components/Icons";
 import { Dialog } from "../../components/Dialog";
-import type { ChatMessage } from "../../services/llm";
-import type { LlmStatus } from "../../services/llm";
+import { useLlmChat, type LlmStatus } from "../../services/llm";
 
 export interface LLMPanelProps {
   code?: string;
   onCodeChange?: (code: string) => void;
   onSettingsClick: () => void;
   errorCount?: number;
-  status: LlmStatus;
-  streamingText: string;
-  messages: ChatMessage[];
-  lastError: string | null;
-  pendingCode: string | null;
-  send: (userMessage: string, options?: { code?: string }) => void;
-  acceptCode: (onCodeChange?: (code: string) => void) => void;
-  rejectCode: () => void;
-  clear: () => void;
-  isConfigured: boolean;
+  onStatusChange?: (status: LlmStatus) => void;
+  onPendingCodeChange?: (code: string | null) => void;
+  onConfiguredChange?: (configured: boolean) => void;
 }
 
 const LLMPanel = ({
@@ -28,17 +20,27 @@ const LLMPanel = ({
   onCodeChange,
   onSettingsClick,
   errorCount = 0,
-  status,
-  streamingText,
-  messages,
-  lastError,
-  pendingCode,
-  send,
-  acceptCode,
-  rejectCode,
-  clear,
-  isConfigured,
+  onStatusChange,
+  onPendingCodeChange,
+  onConfiguredChange,
 }: LLMPanelProps) => {
+  const {
+    status,
+    streamingText,
+    messages,
+    lastError,
+    pendingCode,
+    send,
+    acceptCode,
+    rejectCode,
+    clear,
+    isConfigured,
+  } = useLlmChat();
+
+  useEffect(() => { onStatusChange?.(status); }, [status, onStatusChange]);
+  useEffect(() => { onPendingCodeChange?.(pendingCode); }, [pendingCode, onPendingCodeChange]);
+  useEffect(() => { onConfiguredChange?.(isConfigured); }, [isConfigured, onConfiguredChange]);
+
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const codeSnapshotRef = useRef<string | null>(null);
@@ -161,7 +163,7 @@ const LLMPanel = ({
             outline={false}
             onClick={onSettingsClick}
             aria-label="AI Settings"
-          className={css({ display: 'grid', placeItems: 'center', py: '1.5' })}
+            className={css({ display: 'grid', placeItems: 'center' })}
           >
             <SettingsGear />
           </ActionButton>
