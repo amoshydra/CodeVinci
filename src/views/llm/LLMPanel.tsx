@@ -8,18 +8,19 @@ import { LlmSettings } from "./LlmSettings";
 interface PromptingViewProps {
   enableLlm: boolean;
   onEnableLlmChange: (enabled: boolean) => void;
+  onCodeChange?: (code: string) => void;
   errorCount?: number;
 }
 
-const PromptingView = ({ enableLlm, onEnableLlmChange, errorCount = 0 }: PromptingViewProps) => {
-  const { status, streamingText, messages, lastError, send, clear, isConfigured } = useLlmChat();
+const PromptingView = ({ enableLlm, onEnableLlmChange, onCodeChange, errorCount = 0 }: PromptingViewProps) => {
+  const { status, streamingText, messages, lastError, pendingCode, send, acceptCode, rejectCode, clear, isConfigured } = useLlmChat();
   const [expanded, setExpanded] = useState(false);
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<"auto" | "create" | "edit">("auto");
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const hasOutput = messages.length > 0 || !!streamingText || !!lastError;
+  const hasOutput = messages.length > 0 || !!streamingText || !!lastError || !!pendingCode;
   const canSend = input.trim() && status !== "streaming" && isConfigured;
 
   useEffect(() => {
@@ -54,9 +55,10 @@ const PromptingView = ({ enableLlm, onEnableLlmChange, errorCount = 0 }: Prompti
     setMode(m);
   }, []);
 
-  const contextTags = [
-    errorCount > 0 && { label: `${errorCount} error${errorCount > 1 ? 's' : ''}`, variant: 'error' as const },
-  ].filter(Boolean);
+  const contextTags: { label: string; variant: 'error' }[] = [];
+  if (errorCount > 0) {
+    contextTags.push({ label: `${errorCount} error${errorCount > 1 ? 's' : ''}`, variant: 'error' });
+  }
 
   return (
     <>
@@ -363,7 +365,6 @@ const PromptingView = ({ enableLlm, onEnableLlmChange, errorCount = 0 }: Prompti
                     {msg.role === 'user' ? 'You' : 'AI'}
                   </div>
                   <div className={css({
-                    fontSize: 'sm',
                     color: msg.role === 'user' ? 'stone.200' : 'stone.300',
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
@@ -436,6 +437,86 @@ const PromptingView = ({ enableLlm, onEnableLlmChange, errorCount = 0 }: Prompti
                     },
                   })}>
                     {formatOutput(streamingText)}
+                  </div>
+                </div>
+              )}
+
+              {pendingCode && (
+                <div className={css({
+                  py: '2',
+                  px: '3',
+                  mt: '2',
+                  borderRadius: 'md',
+                  bg: 'emerald.900/20',
+                  border: '1px solid',
+                  borderColor: 'emerald.700/40',
+                })}>
+                  <div className={css({
+                    fontSize: 'xs',
+                    color: 'emerald.400',
+                    mb: '1.5',
+                    fontFamily: 'mono',
+                    letterSpacing: '0.02em',
+                    textTransform: 'uppercase',
+                  })}>
+                    Code generated — review below
+                  </div>
+                  <pre className={css({
+                    fontSize: 'xs',
+                    fontFamily: 'mono',
+                    color: 'stone.200',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    lineHeight: '1.5',
+                    bg: 'stone.950',
+                    p: '2',
+                    borderRadius: 'md',
+                    maxH: '36',
+                    overflowY: 'auto',
+                    mb: '2',
+                  })}>
+                    {formatOutput(pendingCode.slice(0, 1000))}
+                    {pendingCode.length > 1000 && (
+                      <span className={css({ color: 'stone.500' })}>
+                        {'\n'}... ({pendingCode.length - 1000} more chars)
+                      </span>
+                    )}
+                  </pre>
+                  <div className={css({ display: 'flex', gap: '2' })}>
+                    <button
+                      onClick={() => acceptCode(onCodeChange)}
+                      className={css({
+                        px: '3',
+                        py: '1.5',
+                        borderRadius: 'md',
+                        border: 'none',
+                        bg: 'emerald.600',
+                        color: 'white',
+                        fontSize: 'sm',
+                        fontWeight: 'medium',
+                        cursor: 'pointer',
+                        _hover: { bg: 'emerald.500' },
+                      })}
+                    >
+                      Accept code
+                    </button>
+                    <button
+                      onClick={rejectCode}
+                      className={css({
+                        px: '3',
+                        py: '1.5',
+                        borderRadius: 'md',
+                        border: '1px solid',
+                        borderColor: 'stone.600',
+                        bg: 'transparent',
+                        color: 'stone.400',
+                        fontSize: 'sm',
+                        cursor: 'pointer',
+                        _hover: { bg: 'stone.800', color: 'stone.200' },
+                      })}
+                    >
+                      Reject
+                    </button>
                   </div>
                 </div>
               )}

@@ -1,4 +1,4 @@
-import { llmConfigStore } from './config';
+import { llmConfigStore, type LlmTool, type LlmToolCall } from './config';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -9,6 +9,7 @@ export interface StreamCallbacks {
   onToken: (token: string) => void;
   onComplete: (fullResponse: string) => void;
   onError: (error: Error) => void;
+  onToolCalls?: (toolCalls: LlmToolCall[]) => void;
 }
 
 function normalizeEndpoint(endpoint: string): string {
@@ -55,20 +56,42 @@ export class LLMClient {
     }
   }
 
-  async sendMessage(messages: ChatMessage[], callbacks: StreamCallbacks): Promise<void> {
+  /** Accumulated tool call deltas by index — reset per sendMessage call */
+  private toolCallAccumulator: Map<number, { id?: string; function: { name?: string; arguments: string } }> = new Map();
+
+  async sendMessage(
+    messages: ChatMessage[],
+    callbacks: StreamCallbacks,
+    tools?: LlmTool[],
+  ): Promise<void> {
     const endpoint = normalizeEndpoint(this.config.apiEndpoint);
+    this.toolCallAccumulator.clear();
+
+    const body: Record<string, unknown> = {
+      model: this.config.defaultModel,
+      messages,
+      stream: true,
+      max_tokens: this.config.maxTokens,
+      temperature: this.config.temperature,
+      top_p: this.config.topP,
+    };
+
+    if (tools && tools.length > 0) {
+      body.tools = tools.map((t) => ({
+        type: 'function',
+        function: {
+          name: t.name,
+          description: t.description,
+          parameters: t.parameters,
+        },
+      }));
+      body.tool_choice = 'auto';
+    }
 
     const response = await fetch(`${endpoint}/chat/completions`, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify({
-        model: this.config.defaultModel,
-        messages,
-        stream: true,
-        max_tokens: this.config.maxTokens,
-        temperature: this.config.temperature,
-        top_p: this.config.topP,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -85,6 +108,7 @@ export class LLMClient {
 
     const decoder = new TextDecoder();
     let fullResponse = '';
+    let finishReason: string | null = null;
 
     try {
       while (true) {
@@ -96,14 +120,38 @@ export class LLMClient {
 
         for (const line of lines) {
           const data = line.slice(6);
-          if (data === '[DONE]') continue;
+          if (data === '[DONE]') {
+            finishReason = 'stop';
+            continue;
+          }
 
           try {
             const parsed = JSON.parse(data);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              fullResponse += content;
-              callbacks.onToken(content);
+            const choice = parsed.choices?.[0];
+            if (!choice) continue;
+
+            const delta = choice.delta || {};
+
+            if (delta.content) {
+              fullResponse += delta.content;
+              callbacks.onToken(delta.content);
+            }
+
+            if (delta.tool_calls) {
+              for (const tc of delta.tool_calls) {
+                const idx = tc.index ?? 0;
+                const existing = this.toolCallAccumulator.get(idx) || { function: { arguments: '' } };
+                if (tc.id) existing.id = tc.id;
+                if (tc.function) {
+                  if (tc.function.name) existing.function.name = tc.function.name;
+                  if (tc.function.arguments) existing.function.arguments += tc.function.arguments;
+                }
+                this.toolCallAccumulator.set(idx, existing);
+              }
+            }
+
+            if (choice.finish_reason) {
+              finishReason = choice.finish_reason;
             }
           } catch {
             // Skip unparseable lines
@@ -111,10 +159,41 @@ export class LLMClient {
         }
       }
 
+      // At stream end, check for tool calls
+      if (
+        callbacks.onToolCalls &&
+        finishReason === 'tool_calls' &&
+        this.toolCallAccumulator.size > 0
+      ) {
+        const toolCalls: LlmToolCall[] = [];
+        for (const [, tc] of this.toolCallAccumulator) {
+          if (tc.function.name) {
+            let args: Record<string, unknown> = {};
+            try {
+              args = JSON.parse(tc.function.arguments);
+            } catch {
+              args = { code: tc.function.arguments };
+            }
+            toolCalls.push({ name: tc.function.name, arguments: args });
+          }
+        }
+        if (toolCalls.length > 0) {
+          callbacks.onToolCalls(toolCalls);
+        }
+      }
+
       callbacks.onComplete(fullResponse);
     } catch (error) {
       callbacks.onError(error instanceof Error ? error : new Error(String(error)));
     }
+  }
+
+  async sendMessageWithTools(
+    messages: ChatMessage[],
+    tools: LlmTool[],
+    callbacks: StreamCallbacks,
+  ): Promise<void> {
+    return this.sendMessage(messages, callbacks, tools);
   }
 
   async sendMessageOnce(messages: ChatMessage[]): Promise<string> {

@@ -1,5 +1,31 @@
 export type LlmProvider = 'openai-compatible' | 'openai';
 
+export interface LlmTool {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+}
+
+export interface LlmToolCall {
+  name: string;
+  arguments: Record<string, unknown>;
+}
+
+export const CODE_GENERATION_TOOL: LlmTool = {
+  name: "set_code",
+  description: "Call this tool when you have generated the complete code solution. This will set the code in the editor.",
+  parameters: {
+    type: "object",
+    properties: {
+      code: {
+        type: "string",
+        description: "The complete code."
+      }
+    },
+    required: ["code"]
+  }
+};
+
 export interface LLMConfig {
   provider: LlmProvider;
   apiEndpoint: string;
@@ -22,9 +48,16 @@ export const DEFAULT_SYSTEM_PROMPT = `You are a coding assistant for CodeVinci, 
 
 The user works with HTML/CSS/JS in a live preview environment.
 
-When asked to create something, generate complete, runnable HTML with embedded CSS and JS.
-When asked to edit, provide only the changed code with brief context.
-Be concise. Prefer code over explanation.`;
+Your task:
+1. Understand the user's request carefully
+2. Generate complete, runnable code that fulfills the request
+3. When code generation is complete, you MUST call the set_code tool with the complete code
+4. Do not call the tool until you have fully generated the code
+
+IMPORTANT:
+- The code should be complete and runnable in a browser environment
+- You can import external npm libraries from https://esm.sh
+- Provide working, self-contained code`;
 
 export function getDefaultLLMConfig(): LLMConfig {
   return {

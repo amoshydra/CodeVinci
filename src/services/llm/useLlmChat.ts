@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { llmClient } from './client';
-import { llmConfigStore } from './config';
-import { ChatMessage } from './client';
+import { llmConfigStore, type LlmTool, type LlmToolCall, CODE_GENERATION_TOOL } from './config';
+import type { ChatMessage } from './client';
 
 const MAX_MESSAGES = 50;
 
@@ -12,6 +12,8 @@ export interface LlmState {
   streamingText: string;
   messages: ChatMessage[];
   lastError: string | null;
+  toolCalls: LlmToolCall[] | null;
+  pendingCode: string | null;
 }
 
 export function useLlmChat(initialSystemPrompt?: string) {
@@ -20,11 +22,13 @@ export function useLlmChat(initialSystemPrompt?: string) {
     streamingText: '',
     messages: [],
     lastError: null,
+    toolCalls: null,
+    pendingCode: null,
   });
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const send = useCallback(async (userMessage: string) => {
+  const send = useCallback(async (userMessage: string, tools?: LlmTool[]) => {
     if (!llmConfigStore.isConfigured()) {
       setState((prev) => ({
         ...prev,
@@ -53,6 +57,8 @@ export function useLlmChat(initialSystemPrompt?: string) {
       status: 'streaming',
       streamingText: '',
       lastError: null,
+      toolCalls: null,
+      pendingCode: null,
     }));
 
     abortControllerRef.current?.abort();
@@ -73,9 +79,9 @@ export function useLlmChat(initialSystemPrompt?: string) {
             const newMessages = [...prev.messages, { role: 'assistant' as const, content: fullResponse }];
             return {
               ...prev,
-              status: 'idle',
+              status: prev.toolCalls ? 'idle' : 'idle',
               streamingText: '',
-              messages: newMessages.slice(-MAX_MESSAGES),
+              messages: prev.toolCalls ? prev.messages : newMessages.slice(-MAX_MESSAGES),
             };
           });
         },
@@ -87,7 +93,19 @@ export function useLlmChat(initialSystemPrompt?: string) {
             lastError: error.message,
           }));
         },
-      });
+        onToolCalls: (toolCalls: LlmToolCall[]) => {
+          const codeCall = toolCalls.find((t) => t.name === 'set_code');
+          const pendingCode =
+            codeCall?.arguments && typeof codeCall.arguments.code === 'string'
+              ? codeCall.arguments.code
+              : null;
+          setState((prev) => ({
+            ...prev,
+            toolCalls,
+            pendingCode,
+          }));
+        },
+      }, tools || [CODE_GENERATION_TOOL]);
     } catch (error) {
       setState((prev) => ({
         ...prev,
@@ -98,12 +116,36 @@ export function useLlmChat(initialSystemPrompt?: string) {
     }
   }, [state.messages, initialSystemPrompt]);
 
+  const acceptCode = useCallback((onCodeChange?: (code: string) => void) => {
+    if (state.pendingCode && onCodeChange) {
+      onCodeChange(state.pendingCode);
+    }
+    setState((prev) => ({
+      ...prev,
+      toolCalls: null,
+      pendingCode: null,
+      messages: [],
+      streamingText: '',
+      status: 'idle',
+    }));
+  }, [state.pendingCode]);
+
+  const rejectCode = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      toolCalls: null,
+      pendingCode: null,
+    }));
+  }, []);
+
   const clear = useCallback(() => {
     setState({
       status: 'idle',
       streamingText: '',
       messages: [],
       lastError: null,
+      toolCalls: null,
+      pendingCode: null,
     });
   }, []);
 
@@ -116,6 +158,8 @@ export function useLlmChat(initialSystemPrompt?: string) {
   return {
     ...state,
     send,
+    acceptCode,
+    rejectCode,
     clear,
     isConfigured: llmConfigStore.isConfigured(),
   };

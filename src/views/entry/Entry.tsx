@@ -114,6 +114,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
           <PromptingView
             enableLlm={settings.enableLlm}
             onEnableLlmChange={(v) => onSettingUpdate("enableLlm", v)}
+            onCodeChange={onCodeChange}
             errorCount={counts.error}
           />
         </Suspense>
