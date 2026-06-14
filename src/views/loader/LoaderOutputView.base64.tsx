@@ -13,7 +13,11 @@ export const LoaderOutputViewBase64 = ({ value }: LoaderOutputViewProps) => {
       const joinedQuery = QUERY_PROPERTY_VALUE + (sep + parts.join(sep));
       return new URLSearchParams(joinedQuery).get(QUERY_PROPERTY_VALUE) || "";
     }
-    return decodeURIComponent(original);
+    try {
+      return decodeURIComponent(original);
+    } catch {
+      return "";
+    }
   }, [value]);
 
   const isValidBase64 = useMemo(() => {
