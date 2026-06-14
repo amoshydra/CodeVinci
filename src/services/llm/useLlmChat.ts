@@ -30,15 +30,33 @@ function trimMessages(messages: ChatMessage[]): ChatMessage[] {
   return result;
 }
 
+// Module-level state — persists across component mounts/unmounts
+let _store: LlmState = {
+  status: 'idle',
+  streamingText: '',
+  messages: [],
+  lastError: null,
+  toolCalls: null,
+  pendingCode: null,
+};
+let _listeners: Array<() => void> = [];
+
+function notify() {
+  _listeners.forEach(fn => fn());
+}
+
 export function useLlmChat(initialSystemPrompt?: string) {
-  const [state, setState] = useState<LlmState>({
-    status: 'idle',
-    streamingText: '',
-    messages: [],
-    lastError: null,
-    toolCalls: null,
-    pendingCode: null,
-  });
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const fn = () => forceUpdate(n => n + 1);
+    _listeners.push(fn);
+    return () => {
+      _listeners = _listeners.filter(f => f !== fn);
+    };
+  }, []);
+
+  const state = _store;
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamStartRef = useRef(0);
@@ -49,35 +67,31 @@ export function useLlmChat(initialSystemPrompt?: string) {
 
   const send = useCallback(async (userMessage: string, options?: { code?: string }) => {
     if (!llmConfigStore.isConfigured()) {
-      setState((prev) => ({
-        ...prev,
-        status: 'error',
-        lastError: 'AI not configured. Set endpoint and model in settings.',
-      }));
+      _store = { ..._store, status: 'error', lastError: 'AI not configured. Set endpoint and model in settings.' };
+      notify();
       return;
     }
 
     const config = llmConfigStore.config;
     const codeSnapshot = options?.code ?? null;
 
-    // Build user message for API with current code context
     const apiUserContent = codeSnapshot
       ? `Current editor code:\n\`\`\`js\n${codeSnapshot.slice(0, CODE_TRUNCATE_LENGTH)}${codeSnapshot.length > CODE_TRUNCATE_LENGTH ? '\n// ... truncated' : ''}\n\`\`\`\n\n${userMessage}`
       : userMessage;
 
-    // Store clean message in local history (without code injection)
     const cleanMessage: ChatMessage = { role: 'user', content: userMessage };
     const trimmedMessages = trimMessages([...state.messages, cleanMessage]);
 
-    setState((prev) => ({
-      ...prev,
+    _store = {
+      ..._store,
       messages: trimmedMessages,
-      status: 'streaming',
+      status: 'streaming' as const,
       streamingText: '',
       lastError: null,
       toolCalls: null,
       pendingCode: null,
-    }));
+    };
+    notify();
 
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
@@ -88,7 +102,6 @@ export function useLlmChat(initialSystemPrompt?: string) {
 
     const requestId = ++requestIdRef.current;
 
-    // Build API messages: system prompt + clean history + current message with code
     const systemMessage: ChatMessage = {
       role: 'system',
       content: initialSystemPrompt || config.systemPrompt,
@@ -104,26 +117,23 @@ export function useLlmChat(initialSystemPrompt?: string) {
         onToken: (token: string) => {
           if (requestIdRef.current !== requestId) return;
           streamingTextRef.current += token;
-          setState((prev) => ({
-            ...prev,
-            streamingText: prev.streamingText + token,
-          }));
+          _store = { ..._store, streamingText: streamingTextRef.current };
+          notify();
         },
         onComplete: (fullResponse: string) => {
           if (requestIdRef.current !== requestId) return;
           const applyResult = () => {
-            setState((prev) => {
-              const hasToolCalls = !!prev.toolCalls?.length;
-              const newMessages = hasToolCalls
-                ? [...prev.messages, { role: 'assistant' as const, content: toolCallReasoningRef.current || 'Generated code via tool call.' }]
-                : [...prev.messages, { role: 'assistant' as const, content: fullResponse }];
-              return {
-                ...prev,
-                status: 'idle',
-                streamingText: '',
-                messages: newMessages,
-              };
-            });
+            const hasToolCalls = !!_store.toolCalls?.length;
+            const newMessages = hasToolCalls
+              ? [..._store.messages, { role: 'assistant' as const, content: toolCallReasoningRef.current || 'Generated code via tool call.' }]
+              : [..._store.messages, { role: 'assistant' as const, content: fullResponse }];
+            _store = {
+              ..._store,
+              status: 'idle',
+              streamingText: '',
+              messages: newMessages,
+            };
+            notify();
           };
           const elapsed = Date.now() - streamStartRef.current;
           if (elapsed < MIN_STREAM_MS) {
@@ -134,12 +144,8 @@ export function useLlmChat(initialSystemPrompt?: string) {
         },
         onError: (error: Error) => {
           if (requestIdRef.current !== requestId) return;
-          setState((prev) => ({
-            ...prev,
-            status: 'error',
-            streamingText: '',
-            lastError: error.message,
-          }));
+          _store = { ..._store, status: 'error', streamingText: '', lastError: error.message };
+          notify();
         },
         onToolCalls: (toolCalls: LlmToolCall[]) => {
           if (requestIdRef.current !== requestId) return;
@@ -149,59 +155,38 @@ export function useLlmChat(initialSystemPrompt?: string) {
             codeCall?.arguments && typeof codeCall.arguments.code === 'string'
               ? codeCall.arguments.code
               : null;
-          setState((prev) => ({
-            ...prev,
-            toolCalls,
-            pendingCode,
-          }));
+          _store = { ..._store, toolCalls, pendingCode };
+          notify();
         },
       }, [CODE_GENERATION_TOOL]);
     } catch (error) {
       if (requestIdRef.current !== requestId) return;
-      setState((prev) => ({
-        ...prev,
-        status: 'error',
-        streamingText: '',
-        lastError: error instanceof Error ? error.message : 'Unknown error',
-      }));
+      _store = { ..._store, status: 'error', streamingText: '', lastError: error instanceof Error ? error.message : 'Unknown error' };
+      notify();
     }
-  }, [state.messages, initialSystemPrompt]);
+  }, []); // No deps — we read _store directly
 
   const acceptCode = useCallback((onCodeChange?: (code: string) => void) => {
-    if (state.pendingCode && onCodeChange) {
-      onCodeChange(state.pendingCode);
+    if (_store.pendingCode && onCodeChange) {
+      onCodeChange(_store.pendingCode);
     }
-    setState((prev) => ({
-      ...prev,
-      toolCalls: null,
-      pendingCode: null,
-      status: 'idle',
-    }));
-  }, [state.pendingCode]);
+    _store = { ..._store, toolCalls: null, pendingCode: null, status: 'idle' };
+    notify();
+  }, []);
 
   const rejectCode = useCallback(() => {
-    setState((prev) => {
-      const updatedMessages = prev.pendingCode
-        ? prev.messages.slice(0, -1)
-        : prev.messages;
-      return {
-        ...prev,
-        toolCalls: null,
-        pendingCode: null,
-        messages: updatedMessages,
-      };
-    });
+    _store = {
+      ..._store,
+      toolCalls: null,
+      pendingCode: null,
+      messages: _store.pendingCode ? _store.messages.slice(0, -1) : _store.messages,
+    };
+    notify();
   }, []);
 
   const clear = useCallback(() => {
-    setState({
-      status: 'idle',
-      streamingText: '',
-      messages: [],
-      lastError: null,
-      toolCalls: null,
-      pendingCode: null,
-    });
+    _store = { status: 'idle', streamingText: '', messages: [], lastError: null, toolCalls: null, pendingCode: null };
+    notify();
   }, []);
 
   useEffect(() => {
