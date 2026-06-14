@@ -69,21 +69,21 @@ export const BrandLogoButton = () => {
                 GitHub: amoshydra/CodeVinci
               </span>
             </a>
-
-            <div className={css({ marginTop: 24, display: "grid", rowGap: 4 })}>
-              <h2 className={css({ fontWeight: "bold" })}>Others</h2>
-              <div className={css({ display: "flex", gap: 2, })}>
-                <ActionButtonLink
-                  href={`${import.meta.env.BASE_URL}`}
-                  size="sm"
-                >Home</ActionButtonLink>
-                <ActionButtonLink
-                  href={`${import.meta.env.BASE_URL}/loader`.replace(/\/+/g, "/")}
-                  size="sm"
-                >Loader</ActionButtonLink>
-              </div>
-            </div>
           </p>
+
+          <div className={css({ marginTop: 12, display: "grid", rowGap: 4 })}>
+            <h2 className={css({ fontWeight: "bold" })}>Others</h2>
+            <div className={css({ display: "flex", gap: 2, })}>
+              <ActionButtonLink
+                href={`${import.meta.env.BASE_URL}`}
+                size="sm"
+              >Home</ActionButtonLink>
+              <ActionButtonLink
+                href={`${import.meta.env.BASE_URL}/loader`.replace(/\/+/g, "/")}
+                size="sm"
+              >Loader</ActionButtonLink>
+            </div>
+          </div>
         </div>
       </Dialog>
     </>

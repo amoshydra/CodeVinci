@@ -1,7 +1,7 @@
-import { HTMLAttributes, useDeferredValue } from "react";
+import { HTMLAttributes, lazy, Suspense, useDeferredValue, useState } from "react";
 import { css } from "../../../styled-system/css";
-import { styled } from "../../../styled-system/jsx";
 import { EntryContentGrid, A as GridArea } from "../../components/EntryContentGrid";
+import { Dialog } from "../../components/Dialog";
 import { UseSettingsReturn } from "../../services/settings";
 import { useLogger } from "../../services/useLogger";
 import { esbuildLaunchInNewWindow } from "../../utils/esbuilder.opener";
@@ -10,6 +10,9 @@ import { BottomBar } from "../bottom-bar/BottomBar";
 import { Editor } from "../editor/Editor";
 import { TopBar } from "../top-bar/TopBar";
 import { Viewer } from "../viewer/Viewer";
+import { LlmSettings } from "../llm/LlmSettings";
+
+const PromptingView = lazy(() => import("../llm/LLMPanel"));
 
 export interface EntryProps extends HTMLAttributes<HTMLElement> {
   code: string;
@@ -21,6 +24,7 @@ export interface EntryProps extends HTMLAttributes<HTMLElement> {
 export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props }: EntryProps) => {
   const deferredCode = useDeferredValue(code);
   const { logs, onFrameMessage, resetLog, counts } = useLogger(deferredCode);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <div
@@ -43,6 +47,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
           }
           onSettingUpdate("mode", newViewMode);
         }}
+        onSettingsClick={() => setSettingsOpen(true)}
       />
       <EntryContentGrid
         className={css({
@@ -79,14 +84,6 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
         {
           settings.mode.includes("edit") && (
             <>
-              <Placeholder data-placeholder="sidebar" data-grid-area={GridArea.sidebar}
-                className={css({
-                  resize: 'horizontal',
-                  background: "stone.950",
-                  overflow: 'auto',
-                  display: 'none'
-                })}
-              />
               <Editor
                 className={css({
                   height: 'full',
@@ -110,13 +107,31 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
           )
         }
       </EntryContentGrid>
+
+      {/* Prompting view — floating overlay when AI is enabled */}
+      {settings.enableLlm && (
+        <Suspense fallback={null}>
+          <PromptingView
+            enableLlm={settings.enableLlm}
+            onEnableLlmChange={(v) => onSettingUpdate("enableLlm", v)}
+            errorCount={counts.error}
+          />
+        </Suspense>
+      )}
+
+      {/* Settings dialog (accessible from TopBar gear) */}
+      <Dialog
+        id="app-settings"
+        title="Settings"
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      >
+        <LlmSettings
+          enableLlm={settings.enableLlm}
+          onEnableLlmChange={(v) => onSettingUpdate("enableLlm", v)}
+          onClose={() => setSettingsOpen(false)}
+        />
+      </Dialog>
     </div>
   );
 };
-
-
-const Placeholder = styled('div', {
-  base: {
-    p: '4',
-  },
-});

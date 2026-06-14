@@ -5,18 +5,24 @@ export type SettingsMode = "view-edit" | "view" | "edit" | "external";
 export interface UseSettingsReturn {
   target: string;
   mode: SettingsMode;
+  enableLlm: boolean;
 };
 
 export const useSettings = () => {
   const [params, setParams] = useState(getInitialParams)
 
-  const updateSetting = useCallback(<K extends keyof UseSettingsReturn>(name: K, value: UseSettingsReturn[K]) => {
-    setParams(p => ({
-      ...p,
-      [name]: value,
-    }));
-    updateParams(name, value);
-  }, []);
+const URL_PARAM_MAP: Partial<Record<keyof UseSettingsReturn, string>> = {
+  enableLlm: "llm",
+};
+
+const updateSetting = useCallback(<K extends keyof UseSettingsReturn>(name: K, value: UseSettingsReturn[K]) => {
+  setParams(p => ({
+    ...p,
+    [name]: value,
+  }));
+  const paramKey = URL_PARAM_MAP[name] ?? name;
+  updateParams(paramKey, value as string | boolean);
+}, []);
   return {
     settings: params,
     updateSetting,
@@ -26,6 +32,7 @@ export const useSettings = () => {
 const whiteListedParams = new Set([
   "target",
   "mode",
+  "llm",
 ]);
 
 function getInitialParams (): UseSettingsReturn {
@@ -40,14 +47,15 @@ function getInitialParams (): UseSettingsReturn {
   return Object.freeze({
     target: "esnext",
     mode: "view-edit",
+    enableLlm: params.get("llm") === "true",
     ...result,
   });
 }
 
 
-function updateParams (name: string, value: string) {
+function updateParams (name: string, value: string | boolean) {
   const url = new URL(window.location.href);
-  url.searchParams.set(name, value);
+  url.searchParams.set(name, String(value).toLowerCase());
 
   // Update URL
   history.replaceState(null, "", url);

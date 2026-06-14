@@ -1,15 +1,21 @@
 import "./App.css";
+import { useEffect } from "react";
 import { useSettings } from "./services/settings";
 import { useCodeStorage } from "./services/useCodeStorage";
 import { Disclaimer } from "./views/disclaimer/Disclaimer";
 import { toggleComment } from "./views/disclaimer/toggleComment.util";
 import { useDisclaimer } from "./views/disclaimer/useDisclaimer";
 import { Entry } from "./views/entry/Entry";
+import { applyCspFromConfig } from "./services/llm/csp";
 
 function App() {
   const [code, setCode] = useCodeStorage(initialCode);
   const { isDisclaimerAccepted, acceptDisclaimer } = useDisclaimer();
   const { settings, updateSetting } = useSettings();
+
+  useEffect(() => {
+    applyCspFromConfig();
+  }, []);
 
   if (!isDisclaimerAccepted) {
     return (
