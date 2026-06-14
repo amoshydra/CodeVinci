@@ -22,7 +22,8 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
 
   const [provider, setProvider] = useState<LlmProvider>(stored.provider);
   const [endpoint, setEndpoint] = useState(stored.apiEndpoint);
-  const [apiKey, setApiKey] = useState(stored.apiKey);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const hasStoredKey = !!stored.apiKey;
   const [defaultModel, setDefaultModel] = useState(stored.defaultModel);
   const [systemPrompt, setSystemPrompt] = useState(stored.systemPrompt);
 
@@ -46,6 +47,7 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
   }, [endpoint]);
 
   const handleSave = useCallback(() => {
+    const resolvedKey = apiKeyInput || stored.apiKey;
     const prevCspOrigin = stored.cspOrigin;
     const newCspOrigin = extractOrigin(endpoint);
     const resolvedModel = selectRef.current?.value === '__custom__' ? customModel : selectRef.current?.value || defaultModel;
@@ -53,7 +55,7 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
       ...stored,
       provider,
       apiEndpoint: endpoint,
-      apiKey,
+      apiKey: resolvedKey,
       defaultModel: resolvedModel,
       systemPrompt,
       availableModels: models,
@@ -68,8 +70,9 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
     }
 
     llmConfigStore.store(config);
+    setApiKeyInput('');
     onClose();
-  }, [provider, endpoint, apiKey, defaultModel, customModel, systemPrompt, models, stored, onClose]);
+  }, [provider, endpoint, apiKeyInput, defaultModel, customModel, systemPrompt, models, stored, onClose]);
 
   const handleToggleAi = useCallback(() => {
     onEnableLlmChange(!enableLlm);
@@ -84,12 +87,13 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
   const handleTestConnection = useCallback(async () => {
     setTesting(true);
     setTestResult(null);
+    const testKey = apiKeyInput || stored.apiKey;
     try {
       const { LLMClient } = await import("../../services/llm");
       const ok = await llmConfigStore.withConfig({
         provider,
         apiEndpoint: endpoint,
-        apiKey,
+        apiKey: testKey,
         defaultModel: defaultModel || 'gpt-4o',
       }, async () => {
         const client = new LLMClient();
@@ -110,16 +114,17 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
     } finally {
       setTesting(false);
     }
-  }, [provider, endpoint, apiKey, defaultModel]);
+  }, [provider, endpoint, apiKeyInput, defaultModel, stored]);
 
   const handleFetchModels = useCallback(async () => {
     setFetchingModels(true);
+    const fetchKey = apiKeyInput || stored.apiKey;
     try {
       const { LLMClient } = await import("../../services/llm");
       const fetched = await llmConfigStore.withConfig({
         provider,
         apiEndpoint: endpoint,
-        apiKey,
+        apiKey: fetchKey,
       }, async () => {
         const client = new LLMClient();
         return await client.fetchModels().catch(() => []);
@@ -133,7 +138,7 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
     } finally {
       setFetchingModels(false);
     }
-  }, [provider, endpoint, apiKey, defaultModel]);
+  }, [provider, endpoint, apiKeyInput, defaultModel, stored]);
 
   const fieldStyles = {
     px: '3',
@@ -256,9 +261,9 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
             <label className={labelStyles}>API Key</label>
             <input
               type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={provider === 'openai' ? 'sk-...' : 'Optional'}
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              placeholder={hasStoredKey ? 'Key saved — enter new key to replace' : (provider === 'openai' ? 'sk-...' : 'Optional')}
               className={css(fieldStyles)}
             />
           </div>
