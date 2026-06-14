@@ -271,21 +271,21 @@ const LLMPanel = ({
             })}>
               Code generated — review below
             </div>
-            <pre className={css({
+             <pre className={css({
               fontSize: 'xs',
               fontFamily: 'mono',
               color: 'stone.200',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
-              lineHeight: '1.5',
+              lineHeight: '1.4',
               bg: 'stone.950',
               p: '2',
               borderRadius: 'md',
-              maxH: '36',
+              maxH: '48',
               overflowY: 'auto',
               mb: '2',
             })}>
-              {escapeHtml(pendingCode.slice(0, 1000))}
+              {renderDiff(code || '', pendingCode)}
               {pendingCode.length > 1000 && (
                 <span className={css({ color: 'stone.500' })}>
                   {'\n'}... ({pendingCode.length - 1000} more chars)
@@ -496,6 +496,92 @@ function splitCodeBlocks(text: string): Array<{ type: 'text' | 'code'; content: 
   }
 
   return parts.length > 0 ? parts : [{ type: 'text', content: text }];
+}
+
+// Simple diff: returns lines with status 'same' | 'added' | 'removed'
+function computeDiff(oldText: string, newText: string): Array<{ status: 'same' | 'added' | 'removed'; line: string }> {
+  const oldLines = oldText.split('\n');
+  const newLines = newText.split('\n');
+
+  // LCS-based diff
+  const lcs: number[][] = Array.from({ length: oldLines.length + 1 }, () => Array(newLines.length + 1).fill(0));
+  for (let i = 1; i <= oldLines.length; i++) {
+    for (let j = 1; j <= newLines.length; j++) {
+      lcs[i][j] = oldLines[i - 1] === newLines[j - 1] ? lcs[i - 1][j - 1] + 1 : Math.max(lcs[i - 1][j], lcs[i][j - 1]);
+    }
+  }
+
+  const result: Array<{ status: 'same' | 'added' | 'removed'; line: string }> = [];
+  let i = oldLines.length, j = newLines.length;
+  const temp: typeof result = [];
+
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && oldLines[i - 1] === newLines[j - 1]) {
+      temp.push({ status: 'same' as const, line: oldLines[i - 1] });
+      i--; j--;
+    } else if (j > 0 && (i === 0 || lcs[i][j - 1] >= lcs[i - 1][j])) {
+      temp.push({ status: 'added' as const, line: newLines[j - 1] });
+      j--;
+    } else {
+      temp.push({ status: 'removed' as const, line: oldLines[i - 1] });
+      i--;
+    }
+  }
+
+  return temp.reverse();
+}
+
+function renderDiff(oldCode: string, newCode: string): ReactNode[] {
+  const diff = computeDiff(oldCode, newCode);
+  if (diff.length > 100) {
+    // Too many lines — show truncated version
+    const first = diff.slice(0, 50);
+    const last = diff.slice(-50);
+    return [
+      ...first.map((d, i) => (
+        <div key={i} className={css({
+          fontFamily: 'mono', fontSize: 'xs', lineHeight: '1.4',
+          color: d.status === 'added' ? 'emerald.300' : d.status === 'removed' ? 'red.400' : 'stone.400',
+          bg: d.status === 'added' ? 'emerald.900/20' : d.status === 'removed' ? 'red.900/20' : 'transparent',
+          px: '1', py: '0.5', borderRadius: 'sm', my: '0.5',
+        })}>
+          <span className={css({ color: 'stone.600', mr: '1', userSelect: 'none' })}>
+            {d.status === 'added' ? '+' : d.status === 'removed' ? '-' : ' '}
+          </span>
+          {d.line || ' '}
+        </div>
+      )),
+      <div key="ellipsis" className={css({ color: 'stone.500', textAlign: 'center', py: '1', fontSize: 'xs' })}>
+        ... ({diff.length - 100} more lines) ...
+      </div>,
+      ...last.map((d, i) => (
+        <div key={`l${i}`} className={css({
+          fontFamily: 'mono', fontSize: 'xs', lineHeight: '1.4',
+          color: d.status === 'added' ? 'emerald.300' : d.status === 'removed' ? 'red.400' : 'stone.400',
+          bg: d.status === 'added' ? 'emerald.900/20' : d.status === 'removed' ? 'red.900/20' : 'transparent',
+          px: '1', py: '0.5', borderRadius: 'sm', my: '0.5',
+        })}>
+          <span className={css({ color: 'stone.600', mr: '1', userSelect: 'none' })}>
+            {d.status === 'added' ? '+' : d.status === 'removed' ? '-' : ' '}
+          </span>
+          {d.line || ' '}
+        </div>
+      )),
+    ];
+  }
+  return diff.map((d, i) => (
+    <div key={i} className={css({
+      fontFamily: 'mono', fontSize: 'xs', lineHeight: '1.4',
+      color: d.status === 'added' ? 'emerald.300' : d.status === 'removed' ? 'red.400' : 'stone.400',
+      bg: d.status === 'added' ? 'emerald.900/20' : d.status === 'removed' ? 'red.900/20' : 'transparent',
+      px: '1', py: '0.5', borderRadius: 'sm', my: '0.5',
+    })}>
+      <span className={css({ color: 'stone.600', mr: '1', userSelect: 'none' })}>
+        {d.status === 'added' ? '+' : d.status === 'removed' ? '-' : ' '}
+      </span>
+      {d.line || ' '}
+    </div>
+  ));
 }
 
 export default LLMPanel;
