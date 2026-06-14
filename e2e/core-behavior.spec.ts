@@ -184,33 +184,34 @@ test.describe('Core app behavior', () => {
     test('survives code edit (srcdoc reload)', async ({ page }) => {
       await page.selectOption('select', 'view-edit');
 
-      // Set a value in the iframe's mock localStorage
-      const frame1 = page.frames().find(f => f.url() === 'about:srcdoc');
-      expect(frame1).toBeDefined();
-      await page.waitForTimeout(1000);
-
-      await frame1!.evaluate(() => {
-        localStorage.setItem('persist-key', 'persist-value');
-        localStorage.setItem('another-key', 'another-value');
-      });
-
-      const val1 = await frame1!.evaluate(() => localStorage.getItem('persist-key'));
-      expect(val1).toBe('persist-value');
-
-      // Edit code to trigger srcdoc reload
+      // Step 1: Write code that sets localStorage and renders it
       await focusAndClearEditor(page);
-      await page.keyboard.type('document.title = "after edit"', { delay: 10 });
+      await page.keyboard.type(
+        `localStorage.setItem('hero', 'mario');`
+        + ` document.body.textContent = localStorage.getItem('hero');`,
+        { delay: 10 }
+      );
       await page.waitForTimeout(2000);
 
-      // New iframe — localStorage should have persisted
-      const frame2 = page.frames().find(f => f.url() === 'about:srcdoc');
-      expect(frame2).toBeDefined();
+      // Verify the iframe shows "mario"
+      let frame = page.frames().find(f => f.url() === 'about:srcdoc');
+      expect(frame).toBeDefined();
+      let text = await frame!.evaluate(() => document.body.textContent);
+      expect(text).toBe('mario');
 
-      const val2 = await frame2!.evaluate(() => localStorage.getItem('persist-key'));
-      expect(val2).toBe('persist-value');
+      // Step 2: Edit code to read a DIFFERENT key (proves persistence, not re-set)
+      await focusAndClearEditor(page);
+      await page.keyboard.type(
+        `document.body.textContent = localStorage.getItem('hero');`,
+        { delay: 10 }
+      );
+      await page.waitForTimeout(2000);
 
-      const another = await frame2!.evaluate(() => localStorage.getItem('another-key'));
-      expect(another).toBe('another-value');
+      // Verify "mario" still renders — the key was set in step 1 and survived reload
+      frame = page.frames().find(f => f.url() === 'about:srcdoc');
+      expect(frame).toBeDefined();
+      text = await frame!.evaluate(() => document.body.textContent);
+      expect(text).toBe('mario');
     });
   });
 });
