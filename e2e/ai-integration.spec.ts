@@ -207,7 +207,7 @@ test.describe('AI Integration', () => {
 
     // Pending code should be visible in the code review section
     await expect(page.getByText('Code generated')).toBeVisible({ timeout: 3000 });
-    await expect(page.getByText('let counter = 0;')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText('let counter = 0;').first()).toBeVisible({ timeout: 3000 });
 
     // Accept and Reject buttons should be visible
     await expect(page.getByRole('button', { name: 'Accept code' })).toBeVisible({ timeout: 3000 });

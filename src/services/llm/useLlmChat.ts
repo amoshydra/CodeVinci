@@ -163,8 +163,12 @@ export function useLlmChat(initialSystemPrompt?: string) {
             const hasToolCalls = !!_store.toolCalls?.length;
             const reasoning = streamingReasoningRef.current;
             const content = fullResponse;
+            const generatedCode = _store.pendingCode;
             const newMessages = hasToolCalls
-              ? [..._store.messages, { role: 'assistant' as const, content: toolCallReasoningRef.current || 'Generated code via tool call.' }]
+              ? [..._store.messages, {
+                  role: 'assistant' as const,
+                  content: [toolCallReasoningRef.current, generatedCode ? `\`\`\`js\n${generatedCode}\n\`\`\`` : ''].filter(Boolean).join('\n\n'),
+                }]
               : [..._store.messages, { role: 'assistant' as const, content, reasoning: reasoning || undefined }];
             _store = {
               ..._store,
