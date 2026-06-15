@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { css } from "../../../styled-system/css";
 import { ActionButton } from "../../components/ActionButton";
-import { ChatBubble, SettingsGear, SendArrow } from "../../components/Icons";
+import { ChatBubble, SettingsGear, SendArrow, Paperclip } from "../../components/Icons";
 import { Dialog } from "../../components/Dialog";
 import { useLlmChat, type LlmStatus } from "../../services/llm";
+import { llmConfigStore } from "../../services/llm/config";
 
 export interface LLMPanelProps {
   code?: string;
@@ -48,6 +49,40 @@ const LLMPanel = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const codeSnapshotRef = useRef<string | null>(null);
   const [showDivergentWarning, setShowDivergentWarning] = useState(false);
+  const [models, setModels] = useState<string[]>(llmConfigStore.config.availableModels);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; dataUrl: string; type: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch models on mount if not already available
+  useEffect(() => {
+    if (models.length === 0 && llmConfigStore.isConfigured()) {
+      import("../../services/llm").then(({ LLMClient }) => {
+        const client = new LLMClient();
+        client.fetchModels().then(m => { if (m.length > 0) setModels(m); }).catch(() => {});
+      });
+    }
+  }, []);
+
+  const handleModelChange = useCallback((model: string) => {
+    const config = llmConfigStore.config;
+    llmConfigStore.store({ ...config, defaultModel: model });
+  }, []);
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachedFile({ name: file.name, dataUrl: reader.result as string, type: file.type });
+    };
+    reader.readAsDataURL(file);
+    // Reset the input so the same file can be re-selected
+    e.target.value = '';
+  }, []);
+
+  const clearAttachedFile = useCallback(() => {
+    setAttachedFile(null);
+  }, []);
 
   const hasOutput = messages.length > 0 || !!streamingText || !!reasoningText || !!lastError || !!pendingCode;
 
@@ -60,13 +95,13 @@ const LLMPanel = ({
   const handleSend = useCallback(() => {
     if (!canSend) return;
     codeSnapshotRef.current = code ?? null;
-    const options: { code?: string; errors?: string } = { code };
-    if (errorContext) {
-      options.errors = errorContext;
-    }
+    const options: { code?: string; errors?: string; attachedFile?: { name: string; dataUrl: string; type: string } } = { code };
+    if (errorContext) options.errors = errorContext;
+    if (attachedFile) options.attachedFile = attachedFile;
     send(input.trim(), options);
     setInput("");
-  }, [input, canSend, send, code, errorContext]);
+    setAttachedFile(null);
+  }, [input, canSend, send, code, errorContext, attachedFile]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -91,7 +126,9 @@ const LLMPanel = ({
       display: 'flex',
       flexDirection: 'column',
       height: 'full',
-      bg: 'stone.900',
+      bg: 'stone.950',
+      borderLeft: '1px solid',
+      borderColor: 'stone.800',
       overflow: 'hidden',
     })}>
       {/* Header */}
@@ -387,16 +424,46 @@ const LLMPanel = ({
 
       {/* Input at bottom */}
       <div className={css({
-        px: '3',
-        py: '2',
         display: 'flex',
-        gap: '2',
-        alignItems: 'stretch',
+        flexDirection: 'column',
         flexShrink: '0',
         borderTop: '1px solid',
         borderColor: 'stone.800',
       })}>
-        <textarea
+        {attachedFile && (
+          <div className={css({
+            display: 'flex', alignItems: 'center', gap: '2',
+            px: '3', py: '1', bg: 'stone.800/50',
+          })}>
+            <span className={css({ fontSize: 'xs', color: 'stone.400', fontFamily: 'mono', flex: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
+              📎 {attachedFile.name}
+            </span>
+            <button onClick={clearAttachedFile} className={css({
+              background: 'none', border: 'none', color: 'stone.500', cursor: 'pointer',
+              fontSize: 'xs', px: '1', borderRadius: 'md', _hover: { color: 'stone.200', bg: 'stone.700' },
+            })}>✕</button>
+          </div>
+        )}
+        <div className={css({
+          px: '3', py: '2', display: 'flex', gap: '2', alignItems: 'stretch',
+        })}>
+          <ActionButton
+            size="xs"
+            outline={false}
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="Attach file"
+            className={css({ display: 'grid', placeItems: 'center' })}
+          >
+            <Paperclip />
+          </ActionButton>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.pdf,.txt"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+          <textarea
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -445,6 +512,33 @@ const LLMPanel = ({
         >
           <SendArrow />
         </ActionButton>
+      </div>
+      <div className={css({
+        px: '3', pb: '2', display: 'flex', gap: '2', alignItems: 'center',
+      })}>
+        <select
+          value={llmConfigStore.config.defaultModel || ''}
+          onChange={(e) => handleModelChange(e.target.value)}
+          className={css({
+            fontSize: 'xs',
+            fontFamily: 'mono',
+            bg: 'stone.800',
+            color: 'stone.400',
+            border: '1px solid',
+            borderColor: 'stone.700',
+            borderRadius: 'md',
+            px: '1.5',
+            py: '0.5',
+            flex: '1',
+            outline: 'none',
+            cursor: 'pointer',
+            '&:focus': { borderColor: 'sky.500' },
+          })}
+        >
+          {models.length === 0 && <option value="">Model...</option>}
+          {models.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
+        </select>
+      </div>
       </div>
 
       <Dialog
