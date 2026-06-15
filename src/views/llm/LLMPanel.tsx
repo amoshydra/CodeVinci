@@ -239,7 +239,18 @@ const LLMPanel = ({
                       {(msg as any).reasoning}
                     </div>
                   )}
-                  {renderResponse(msg.content)}
+                  {msg.content.startsWith('✓') || msg.content.startsWith('✗') ? (
+                    <div className={css({
+                      fontSize: 'xs',
+                      color: msg.content.startsWith('✓') ? 'emerald.400' : 'stone.500',
+                      fontStyle: 'italic',
+                      py: '1',
+                    })}>
+                      {msg.content}
+                    </div>
+                  ) : (
+                    renderResponse(msg.content)
+                  )}
                 </>
               )}
             </div>

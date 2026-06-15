@@ -210,17 +210,14 @@ export function useLlmChat(initialSystemPrompt?: string) {
     if (_store.pendingCode && onCodeChange) {
       onCodeChange(_store.pendingCode);
     }
-    _store = { ..._store, toolCalls: null, pendingCode: null, status: 'idle' };
+    const historyMsg: ChatMessage = { role: 'assistant' as const, content: '✓ Code accepted — applied to editor' };
+    _store = { ..._store, toolCalls: null, pendingCode: null, status: 'idle', messages: [..._store.messages, historyMsg] };
     notify();
   }, []);
 
   const rejectCode = useCallback(() => {
-    _store = {
-      ..._store,
-      toolCalls: null,
-      pendingCode: null,
-      messages: _store.pendingCode ? _store.messages.slice(0, -1) : _store.messages,
-    };
+    const historyMsg: ChatMessage = { role: 'assistant' as const, content: '✗ Code rejected' };
+    _store = { ..._store, toolCalls: null, pendingCode: null, messages: [..._store.messages, historyMsg] };
     notify();
   }, []);
 
