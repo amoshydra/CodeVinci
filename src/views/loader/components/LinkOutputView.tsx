@@ -1,5 +1,6 @@
 import { css } from "../../../../styled-system/css";
 import { styled } from "../../../../styled-system/jsx";
+import { resetSession } from "../../../utils/session";
 
 export interface LinkOutputViewProps {
   isValid: boolean;
@@ -28,10 +29,7 @@ export const LinkOutputView = ({ isValid, href, fallbackMessage }: LinkOutputVie
         <Base64AnchorLink
           href={href}
           onClick={() => {
-            // clear session storage on click
-            // prevent next session's code from being
-            // evaluated on load
-            sessionStorage.clear();
+            resetSession();
           }}
         >{href}</Base64AnchorLink>
       </div>
