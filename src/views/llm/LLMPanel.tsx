@@ -149,68 +149,54 @@ const LLMPanel = ({
           gap: '2',
         })}>
           <ChatBubble className={css({ color: 'stone.400' })} />
-          <span className={css({ fontSize: 'sm', fontWeight: 'semibold', color: 'stone.200' })}>
+          <span className={css({ fontSize: 'sm', fontWeight: 600, color: 'stone.200' })}>
             AI Chat
           </span>
+          <select
+            value={llmConfigStore.config.defaultModel || ''}
+            onChange={(e) => handleModelChange(e.target.value)}
+            className={css({
+              fontSize: 'xs', fontFamily: 'mono', bg: 'stone.800', color: 'stone.400',
+              border: '1px solid', borderColor: 'stone.700', borderRadius: 'md', px: '1.5', py: '0.5',
+              outline: 'none', cursor: 'pointer', maxW: '28',
+              _hover: { borderColor: 'stone.500' },
+              _focus: { borderColor: 'sky.500' },
+            })}
+            title="Model"
+          >
+            {models.length === 0 && <option value="">Model...</option>}
+            {models.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
+          </select>
+        </div>
+        <div className={css({ display: 'flex', gap: '0.5', alignItems: 'center' })}>
+          {contextTags.length > 0 && contextTags.map((tag, i) => (
+            <span key={i} className={css({
+              px: '1', py: '0.5', borderRadius: 'sm', fontSize: 'xs', fontFamily: 'mono',
+              bg: tag.variant === 'error' ? 'red.900/30' : 'stone.800',
+              color: tag.variant === 'error' ? 'red.400' : 'stone.400',
+            })}>{tag.label}</span>
+          ))}
           {status === 'streaming' && (
-            <span className={css({
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '1.5',
-              fontSize: 'xs',
-              color: 'amber.400',
-            })}>
-              <span className={css({
-                width: '6px',
-                height: '6px',
-                borderRadius: 'full',
-                bg: 'amber.400',
-                animation: 'pulse 1s ease-in-out infinite',
-              })} />
-              generating code...
+            <span className={css({ display: 'flex', alignItems: 'center', gap: '1', fontSize: 'xs', color: 'amber.400' })}>
+              <span className={css({ width: '5px', height: '5px', borderRadius: 'full', bg: 'amber.400', animation: 'pulse 1s ease-in-out infinite' })} />
+              generating
             </span>
           )}
           {pendingCode && status !== 'streaming' && (
-            <span className={css({
-              width: '6px',
-              height: '6px',
-              borderRadius: 'full',
-              bg: 'amber.400',
-              flexShrink: '0',
-            })} />
+            <span className={css({ width: '5px', height: '5px', borderRadius: 'full', bg: 'amber.400' })} />
           )}
-          {contextTags.length > 0 && contextTags.map((tag, i) => (
-            <span key={i} className={css({
-              px: '1.5',
-              py: '0.5',
-              borderRadius: 'sm',
-              fontSize: 'xs',
-              fontFamily: 'mono',
-              letterSpacing: '0.01em',
-              ...(tag.variant === 'error'
-                ? { bg: 'red.900/30', color: 'red.400' }
-                : { bg: 'stone.800', color: 'stone.400' }
-              ),
-            })}>
-              {tag.label}
-            </span>
-          ))}
-        </div>
-        <div className={css({ display: 'flex', gap: '1', alignItems: 'center' })}>
           {hasOutput && (
-            <ActionButton size="xs" visual="secondary" onClick={clear}>
-              Clear
-            </ActionButton>
+            <button onClick={clear} className={css({
+              bg: 'transparent', border: 'none', color: 'stone.500', cursor: 'pointer',
+              px: '1.5', py: '0.5', borderRadius: 'md', fontSize: 'xs',
+              _hover: { color: 'stone.200', bg: 'stone.800' },
+            })}>Clear</button>
           )}
-          <ActionButton
-            size="sm"
-            outline={false}
-            onClick={onSettingsClick}
-            aria-label="AI Settings"
-            className={css({ display: 'grid', placeItems: 'center' })}
-          >
-            <SettingsGear />
-          </ActionButton>
+          <button onClick={onSettingsClick} aria-label="Settings" className={css({
+            bg: 'transparent', border: 'none', color: 'stone.500', cursor: 'pointer',
+            p: '1', borderRadius: 'md', display: 'grid', placeItems: 'center',
+            _hover: { color: 'stone.200', bg: 'stone.800' },
+          })}><SettingsGear width="14" height="14" /></button>
         </div>
       </div>
 
@@ -432,30 +418,34 @@ const LLMPanel = ({
       })}>
         {attachedFile && (
           <div className={css({
-            display: 'flex', alignItems: 'center', gap: '2',
-            px: '3', py: '1', bg: 'stone.800/50',
+            display: 'flex', alignItems: 'center', gap: '2', mx: '3', mt: '1',
+            px: '2', py: '1', bg: 'stone.800', borderRadius: 'sm',
+            fontSize: 'xs', color: 'stone.400', fontFamily: 'mono',
           })}>
-            <span className={css({ fontSize: 'xs', color: 'stone.400', fontFamily: 'mono', flex: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
+            <span className={css({ flex: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
               📎 {attachedFile.name}
             </span>
             <button onClick={clearAttachedFile} className={css({
               background: 'none', border: 'none', color: 'stone.500', cursor: 'pointer',
-              fontSize: 'xs', px: '1', borderRadius: 'md', _hover: { color: 'stone.200', bg: 'stone.700' },
+              lineHeight: '1', p: '0.5', borderRadius: 'sm',
+              _hover: { color: 'stone.200', bg: 'stone.700' },
             })}>✕</button>
           </div>
         )}
         <div className={css({
           px: '3', py: '2', display: 'flex', gap: '2', alignItems: 'stretch',
         })}>
-          <ActionButton
-            size="xs"
-            outline={false}
+          <button
             onClick={() => fileInputRef.current?.click()}
             aria-label="Attach file"
-            className={css({ display: 'grid', placeItems: 'center' })}
+            className={css({
+              background: 'none', border: 'none', color: 'stone.500', cursor: 'pointer',
+              p: '1.5', borderRadius: 'md', display: 'grid', placeItems: 'center', flexShrink: '0',
+              _hover: { color: 'stone.200', bg: 'stone.800' },
+            })}
           >
-            <Paperclip />
-          </ActionButton>
+            <Paperclip width="15" height="15" />
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -512,32 +502,6 @@ const LLMPanel = ({
         >
           <SendArrow />
         </ActionButton>
-      </div>
-      <div className={css({
-        px: '3', pb: '2', display: 'flex', gap: '2', alignItems: 'center',
-      })}>
-        <select
-          value={llmConfigStore.config.defaultModel || ''}
-          onChange={(e) => handleModelChange(e.target.value)}
-          className={css({
-            fontSize: 'xs',
-            fontFamily: 'mono',
-            bg: 'stone.800',
-            color: 'stone.400',
-            border: '1px solid',
-            borderColor: 'stone.700',
-            borderRadius: 'md',
-            px: '1.5',
-            py: '0.5',
-            flex: '1',
-            outline: 'none',
-            cursor: 'pointer',
-            '&:focus': { borderColor: 'sky.500' },
-          })}
-        >
-          {models.length === 0 && <option value="">Model...</option>}
-          {models.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
-        </select>
       </div>
       </div>
 
