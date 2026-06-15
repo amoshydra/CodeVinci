@@ -10,6 +10,23 @@ function mockSseResponse(text: string): string {
   return lines.join('\n');
 }
 
+function mockToolCallResponse(reasoning: string, code: string): string {
+  const argsJson = JSON.stringify({ code });               // e.g. '{"code":"..."}'
+  const escapedArgs = JSON.stringify(argsJson);            // e.g. '"{\\"code\\":\\"...\\"}"'
+  return [
+    `data: {"choices":[{"delta":{"content":"${reasoning}"}}]}`,
+    `data: {"choices":[{"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"id":"call_1","function":{"name":"set_code","arguments":""}}]}}]}`,
+    `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":${escapedArgs}}}]}}]}`,
+    `data: {"choices":[{"delta":{}}],"usage":{}}`,
+    `data: {"choices":[{"delta":{},"finish_reason":"tool_calls"}]}`,
+    'data: [DONE]',
+  ].join('\n\n');
+}
+
+function mockCodeBlockResponse(reasoning: string, code: string): string {
+  return mockSseResponse(`${reasoning}\n\`\`\`js\n${code}\n\`\`\``);
+}
+
 test.describe('AI Integration', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:5199');
@@ -64,6 +81,146 @@ test.describe('AI Integration', () => {
 
     // The response should appear in the chat
     await expect(page.getByText(responseText)).toBeVisible({ timeout: 5000 });
+  });
+
+  test('AI Chat: text-only response (no code, no edit)', async ({ page }) => {
+    await acceptDisclaimer(page);
+    await page.selectOption('select', 'ai-chat');
+    await page.waitForTimeout(2000);
+
+    await page.route('**/chat/completions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: mockSseResponse('This is a plain text response without any code.'),
+      });
+    });
+
+    await page.locator('textarea[placeholder*="Ask AI"]').fill('tell me something');
+    await page.keyboard.press('Control+Enter');
+    await page.waitForTimeout(2000);
+
+    // The response text should appear
+    await expect(page.getByText('plain text response')).toBeVisible({ timeout: 5000 });
+
+    // No Accept/Reject buttons should appear (no code generated)
+    await expect(page.getByRole('button', { name: 'Accept code' })).not.toBeVisible({ timeout: 2000 });
+    await expect(page.getByRole('button', { name: 'Reject' })).not.toBeVisible({ timeout: 1000 });
+  });
+
+  test('AI Chat: reasoning + code block rendered with separation', async ({ page }) => {
+    await acceptDisclaimer(page);
+    await page.selectOption('select', 'ai-chat');
+    await page.waitForTimeout(2000);
+
+    await page.route('**/chat/completions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: mockCodeBlockResponse('First I will add a counter.', 'let count = 0;\nfunction inc() { count++; }'),
+      });
+    });
+
+    await page.locator('textarea[placeholder*="Ask AI"]').fill('add counter');
+    await page.keyboard.press('Control+Enter');
+    await page.waitForTimeout(3000);
+
+    // Reasoning text should be visible
+    await expect(page.getByText('First I will add a counter.')).toBeVisible({ timeout: 5000 });
+
+    // Code block should be rendered (the pre element has dark background)
+    const codeBlock = page.locator('pre').filter({ hasText: 'let count = 0' });
+    await expect(codeBlock).toBeVisible({ timeout: 3000 });
+
+    // No Accept/Reject buttons (code was in text, not tool call)
+    await expect(page.getByRole('button', { name: 'Accept code' })).not.toBeVisible({ timeout: 2000 });
+  });
+
+  test('AI Chat: tool call shows Accept/Reject for generated code', async ({ page }) => {
+    await acceptDisclaimer(page);
+    await page.selectOption('select', 'ai-chat');
+    await page.waitForTimeout(2000);
+
+    await page.route('**/chat/completions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: mockToolCallResponse('Adding a counter.', 'let counter = 0;'),
+      });
+    });
+
+    await page.locator('textarea[placeholder*="Ask AI"]').fill('add a counter');
+    await page.keyboard.press('Control+Enter');
+    await page.waitForTimeout(3000);
+
+    // Reasoning text should be visible
+    await expect(page.getByText('Adding a counter.')).toBeVisible({ timeout: 5000 });
+
+    // Pending code should be visible in the code review section
+    await expect(page.getByText('Code generated')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText('let counter = 0;')).toBeVisible({ timeout: 3000 });
+
+    // Accept and Reject buttons should be visible
+    await expect(page.getByRole('button', { name: 'Accept code' })).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible({ timeout: 1000 });
+  });
+
+  test('AI Chat: accept generated code applies to editor', async ({ page }) => {
+    await acceptDisclaimer(page);
+    await page.selectOption('select', 'ai-chat');
+    await page.waitForTimeout(2000);
+
+    await page.route('**/chat/completions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: mockToolCallResponse('Here is the code.', 'document.title = "accepted";'),
+      });
+    });
+
+    await page.locator('textarea[placeholder*="Ask AI"]').fill('update title');
+    await page.keyboard.press('Control+Enter');
+    await page.waitForTimeout(2000);
+
+    // Accept the code
+    await expect(page.getByRole('button', { name: 'Accept code' })).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: 'Accept code' }).click();
+    await page.waitForTimeout(500);
+
+    // Switch to view-edit mode to check the editor (editor is not rendered in ai-chat)
+    await page.selectOption('select', 'view-edit');
+    await page.waitForTimeout(1000);
+
+    // Verify the editor was updated with the accepted code
+    const editorContent = await page.locator('.cm-content').first().innerText();
+    expect(editorContent).toContain('document.title = "accepted"');
+  });
+
+  test('AI Chat: reject code clears pending without applying', async ({ page }) => {
+    await acceptDisclaimer(page);
+    await page.selectOption('select', 'ai-chat');
+    await page.waitForTimeout(2000);
+
+    await page.route('**/chat/completions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: mockToolCallResponse('Generated code.', 'var x = 42;'),
+      });
+    });
+
+    await page.locator('textarea[placeholder*="Ask AI"]').fill('generate code');
+    await page.keyboard.press('Control+Enter');
+    await page.waitForTimeout(2000);
+
+    // Reject the code
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: 'Reject' }).click();
+    await page.waitForTimeout(500);
+
+    // The code review section should be gone
+    await expect(page.getByText('Code generated')).not.toBeVisible({ timeout: 2000 });
+    await expect(page.getByRole('button', { name: 'Accept code' })).not.toBeVisible({ timeout: 1000 });
   });
 
   test('AI Chat: API request includes correct auth and model', async ({ page }) => {
