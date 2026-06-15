@@ -5,6 +5,7 @@ import type { ChatMessage } from './client';
 
 const MAX_HISTORY_CHARS = 16000;
 const MIN_STREAM_MS = 800;
+const SS_HISTORY_KEY = 'codevinci-llm-history';
 
 export type LlmStatus = 'idle' | 'streaming' | 'error';
 
@@ -15,6 +16,21 @@ export interface LlmState {
   lastError: string | null;
   toolCalls: LlmToolCall[] | null;
   pendingCode: string | null;
+}
+
+function loadHistory(): ChatMessage[] {
+  try {
+    const raw = sessionStorage.getItem(SS_HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(messages: ChatMessage[]): void {
+  try {
+    sessionStorage.setItem(SS_HISTORY_KEY, JSON.stringify(messages));
+  } catch { /* quota exceeded */ }
 }
 
 function trimMessages(messages: ChatMessage[]): ChatMessage[] {
@@ -33,7 +49,7 @@ function trimMessages(messages: ChatMessage[]): ChatMessage[] {
 let _store: LlmState = {
   status: 'idle',
   streamingText: '',
-  messages: [],
+  messages: loadHistory(),
   lastError: null,
   toolCalls: null,
   pendingCode: null,
@@ -41,6 +57,7 @@ let _store: LlmState = {
 let _listeners: Array<() => void> = [];
 
 function notify() {
+  saveHistory(_store.messages);
   _listeners.forEach(fn => fn());
 }
 
