@@ -5,12 +5,12 @@ export default defineConfig({
   timeout: 30000,
   retries: 0,
   use: {
-    baseURL: 'http://localhost:5199',
+    baseURL: 'http://localhost:5173',
     headless: true,
   },
   webServer: {
-    command: 'pnpm dev --port 5199',
-    port: 5199,
-    reuseExistingServer: false,
+    command: 'pnpm dev --port 5173',
+    port: 5173,
+    reuseExistingServer: true,
   },
 });

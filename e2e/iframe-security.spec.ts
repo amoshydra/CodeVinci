@@ -4,7 +4,7 @@ const HONEYPOT = 'https://csp-test-honeypot.local';
 
 test.describe('App-level iframe and LLM security', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5199');
+    await page.goto('http://localhost:5173');
     await page.evaluate(() => {
       localStorage.clear();
       sessionStorage.clear();

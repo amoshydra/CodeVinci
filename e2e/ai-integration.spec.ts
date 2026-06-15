@@ -29,7 +29,7 @@ function mockCodeBlockResponse(reasoning: string, code: string): string {
 
 test.describe('AI Integration', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5199');
+    await page.goto('http://localhost:5173');
     await page.evaluate((endpoint) => {
       localStorage.clear();
       sessionStorage.clear();
@@ -336,7 +336,7 @@ test.describe('AI Integration', () => {
   test.describe('Pre-enable: LLM not configured', () => {
     test.beforeEach(async ({ page }) => {
       // Clean state — no localStorage set
-      await page.goto('http://localhost:5199');
+      await page.goto('http://localhost:5173');
       await page.evaluate(() => {
         localStorage.clear();
         sessionStorage.clear();
@@ -353,7 +353,7 @@ test.describe('AI Integration', () => {
 
     test('mode=ai-chat in URL is silently downgraded to view-edit', async ({ page }) => {
       // Navigate with ai-chat mode in URL
-      await page.goto('http://localhost:5199/?mode=ai-chat');
+      await page.goto('http://localhost:5173/?mode=ai-chat');
       await page.waitForTimeout(500);
       await acceptDisclaimer(page);
       await page.waitForTimeout(500);
@@ -374,7 +374,7 @@ test.describe('AI Integration', () => {
   test.describe('Full onboarding: enable → configure → chat', () => {
     test.beforeEach(async ({ page }) => {
       // Clean state
-      await page.goto('http://localhost:5199');
+      await page.goto('http://localhost:5173');
       await page.evaluate(() => {
         localStorage.clear();
         sessionStorage.clear();
@@ -478,7 +478,7 @@ test.describe('AI Integration', () => {
   test.describe('CSP not updated until reload', () => {
     test.beforeEach(async ({ page }) => {
       // Start with a configured endpoint
-      await page.goto('http://localhost:5199');
+      await page.goto('http://localhost:5173');
       await page.evaluate((endpoint) => {
         localStorage.clear();
         sessionStorage.clear();

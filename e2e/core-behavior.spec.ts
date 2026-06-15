@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Core app behavior', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5199');
+    await page.goto('http://localhost:5173');
     await page.evaluate(() => {
       localStorage.clear();
       sessionStorage.clear();
