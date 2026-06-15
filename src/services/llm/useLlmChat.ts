@@ -88,7 +88,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
   const streamingReasoningRef = useRef('');
   const toolCallReasoningRef = useRef('');
 
-  const send = useCallback(async (userMessage: string, options?: { code?: string }) => {
+  const send = useCallback(async (userMessage: string, options?: { code?: string; errors?: string }) => {
     if (!llmConfigStore.isConfigured()) {
       _store = { ..._store, status: 'error', lastError: 'AI not configured. Set endpoint and model in settings.' };
       notify();
@@ -97,10 +97,16 @@ export function useLlmChat(initialSystemPrompt?: string) {
 
     const config = llmConfigStore.config;
     const codeSnapshot = options?.code ?? null;
+    const errorsSnapshot = options?.errors;
 
-    const apiUserContent = codeSnapshot
-      ? `Current editor code:\n\`\`\`js\n${codeSnapshot}\n\`\`\`\n\n${userMessage}`
-      : userMessage;
+    let context = '';
+    if (codeSnapshot) {
+      context += `Current editor code:\n\`\`\`js\n${codeSnapshot}\n\`\`\`\n\n`;
+    }
+    if (errorsSnapshot) {
+      context += `Console output:\n\`\`\`\n${errorsSnapshot}\n\`\`\`\n\n`;
+    }
+    const apiUserContent = context ? `${context}${userMessage}` : userMessage;
 
     const cleanMessage: ChatMessage = { role: 'user', content: userMessage };
     const trimmedMessages = trimMessages([..._store.messages, cleanMessage]);

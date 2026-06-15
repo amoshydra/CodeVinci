@@ -1,4 +1,4 @@
-import { HTMLAttributes, lazy, Suspense, useCallback, useEffect, useDeferredValue, useState } from "react";
+import { HTMLAttributes, lazy, Suspense, useCallback, useEffect, useDeferredValue, useMemo, useState } from "react";
 import { css } from "../../../styled-system/css";
 import { EntryContentGrid, A as GridArea } from "../../components/EntryContentGrid";
 import { Dialog } from "../../components/Dialog";
@@ -25,6 +25,15 @@ export interface EntryProps extends HTMLAttributes<HTMLElement> {
 export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props }: EntryProps) => {
   const deferredCode = useDeferredValue(code);
   const { logs, onFrameMessage, resetLog, counts } = useLogger(deferredCode);
+  const errorContext = useMemo(() => {
+    const errors = logs
+      .filter(l => l.method === 'console.error')
+      .slice(-3);
+    if (errors.length === 0) return '';
+    return errors.map(e => {
+      try { return JSON.stringify(e.args); } catch { return ''; }
+    }).filter(Boolean).join('\n');
+  }, [logs]);
   const [settingsOpen, setSettingsOpen] = useState(() => {
     try { return sessionStorage.getItem('codevinci-reopen-settings') === 'true'; } catch { return false; }
   });
@@ -175,6 +184,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               onCodeChange={handleLLMCodeChange}
               onSettingsClick={() => setSettingsOpen(true)}
               errorCount={counts.error}
+              errorContext={errorContext}
               onStatusChange={setAiStatus}
               onPendingCodeChange={setAiPendingCode}
               onConfiguredChange={setAiConfigured}

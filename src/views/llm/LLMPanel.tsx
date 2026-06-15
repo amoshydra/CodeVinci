@@ -10,6 +10,7 @@ export interface LLMPanelProps {
   onCodeChange?: (code: string) => void;
   onSettingsClick: () => void;
   errorCount?: number;
+  errorContext?: string;
   onStatusChange?: (status: LlmStatus) => void;
   onPendingCodeChange?: (code: string | null) => void;
   onConfiguredChange?: (configured: boolean) => void;
@@ -20,6 +21,7 @@ const LLMPanel = ({
   onCodeChange,
   onSettingsClick,
   errorCount = 0,
+  errorContext = '',
   onStatusChange,
   onPendingCodeChange,
   onConfiguredChange,
@@ -58,9 +60,13 @@ const LLMPanel = ({
   const handleSend = useCallback(() => {
     if (!canSend) return;
     codeSnapshotRef.current = code ?? null;
-    send(input.trim(), { code });
+    const options: { code?: string; errors?: string } = { code };
+    if (errorContext) {
+      options.errors = errorContext;
+    }
+    send(input.trim(), options);
     setInput("");
-  }, [input, canSend, send, code]);
+  }, [input, canSend, send, code, errorContext]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
