@@ -27,6 +27,26 @@ function mockCodeBlockResponse(reasoning: string, code: string): string {
   return mockSseResponse(`${reasoning}\n\`\`\`js\n${code}\n\`\`\``);
 }
 
+function mockReasoningResponse(reasoning: string, content: string): string {
+  const chunks: string[] = [
+    `data: {"choices":[{"delta":{"role":"assistant","content":null}}]}`,
+  ];
+  // Reasoning tokens (word-level)
+  reasoning.split(/\s+/).filter(Boolean).forEach(word => {
+    chunks.push(`data: {"choices":[{"delta":{"reasoning_content":"${word} "}}]}`);
+  });
+  // Content tokens (word-level)
+  content.split(/\s+/).filter(Boolean).forEach(word => {
+    chunks.push(`data: {"choices":[{"delta":{"content":"${word} "}}]}`);
+  });
+  chunks.push(
+    `data: {"choices":[{"delta":{}}],"usage":{}}`,
+    `data: {"choices":[{"delta":{},"finish_reason":"stop"}]}`,
+    'data: [DONE]',
+  );
+  return chunks.join('\n\n');
+}
+
 test.describe('AI Integration', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:5173');
@@ -108,7 +128,36 @@ test.describe('AI Integration', () => {
     await expect(page.getByRole('button', { name: 'Reject' })).not.toBeVisible({ timeout: 1000 });
   });
 
-  test('AI Chat: reasoning + code block rendered with separation', async ({ page }) => {
+  test('AI Chat: reasoning_content displayed dimmed separately from response', async ({ page }) => {
+    await acceptDisclaimer(page);
+    await page.selectOption('select', 'ai-chat');
+    await page.waitForTimeout(2000);
+
+    await page.route('**/chat/completions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: mockReasoningResponse(
+          'The user wants a counter. I will write a simple function.',
+          'Here is a simple counter:\n```js\nlet count = 0;\n```',
+        ),
+      });
+    });
+
+    await page.locator('textarea[placeholder*="Ask AI"]').fill('counter please');
+    await page.keyboard.press('Control+Enter');
+    await page.waitForTimeout(4000);
+
+    // Reasoning text should appear dimmed/italic (has reasoning_content styling)
+    const reasoning = page.getByText('The user wants a counter.');
+    await expect(reasoning).toBeVisible({ timeout: 5000 });
+
+    // Response content should also appear
+    const response = page.getByText('Here is a simple counter:');
+    await expect(response).toBeVisible({ timeout: 5000 });
+  });
+
+  test('AI Chat: text + ```code block``` rendered with reasoning/code separation', async ({ page }) => {
     await acceptDisclaimer(page);
     await page.selectOption('select', 'ai-chat');
     await page.waitForTimeout(2000);

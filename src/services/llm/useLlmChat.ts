@@ -12,6 +12,7 @@ export type LlmStatus = 'idle' | 'streaming' | 'error';
 export interface LlmState {
   status: LlmStatus;
   streamingText: string;
+  reasoningText: string;
   messages: ChatMessage[];
   lastError: string | null;
   toolCalls: LlmToolCall[] | null;
@@ -33,6 +34,10 @@ function saveHistory(messages: ChatMessage[]): void {
   } catch { /* quota exceeded */ }
 }
 
+function stripReasoning(m: ChatMessage): ChatMessage {
+  return m.reasoning ? { role: m.role, content: m.content } : m;
+}
+
 function trimMessages(messages: ChatMessage[]): ChatMessage[] {
   if (messages.length <= 1) return messages;
   let total = messages.reduce((sum, m) => sum + m.content.length, 0);
@@ -49,6 +54,7 @@ function trimMessages(messages: ChatMessage[]): ChatMessage[] {
 let _store: LlmState = {
   status: 'idle',
   streamingText: '',
+  reasoningText: '',
   messages: loadHistory(),
   lastError: null,
   toolCalls: null,
@@ -79,6 +85,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
   const streamTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestIdRef = useRef(0);
   const streamingTextRef = useRef('');
+  const streamingReasoningRef = useRef('');
   const toolCallReasoningRef = useRef('');
 
   const send = useCallback(async (userMessage: string, options?: { code?: string }) => {
@@ -103,6 +110,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
       messages: trimmedMessages,
       status: 'streaming' as const,
       streamingText: '',
+      reasoningText: '',
       lastError: null,
       toolCalls: null,
       pendingCode: null,
@@ -114,6 +122,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
     if (streamTimeoutRef.current) clearTimeout(streamTimeoutRef.current);
     streamStartRef.current = Date.now();
     streamingTextRef.current = '';
+    streamingReasoningRef.current = '';
     toolCallReasoningRef.current = '';
 
     const requestId = ++requestIdRef.current;
@@ -124,7 +133,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
     };
     const apiMessages: ChatMessage[] = [
       systemMessage,
-      ...trimmedMessages.slice(0, -1),
+      ...trimmedMessages.slice(0, -1).map(stripReasoning),
       { role: 'user', content: apiUserContent },
     ];
 
@@ -136,17 +145,26 @@ export function useLlmChat(initialSystemPrompt?: string) {
           _store = { ..._store, streamingText: streamingTextRef.current };
           notify();
         },
+        onReasoning: (token: string) => {
+          if (requestIdRef.current !== requestId) return;
+          streamingReasoningRef.current += token;
+          _store = { ..._store, reasoningText: streamingReasoningRef.current };
+          notify();
+        },
         onComplete: (fullResponse: string) => {
           if (requestIdRef.current !== requestId) return;
           const applyResult = () => {
             const hasToolCalls = !!_store.toolCalls?.length;
+            const reasoning = streamingReasoningRef.current;
+            const content = fullResponse;
             const newMessages = hasToolCalls
               ? [..._store.messages, { role: 'assistant' as const, content: toolCallReasoningRef.current || 'Generated code via tool call.' }]
-              : [..._store.messages, { role: 'assistant' as const, content: fullResponse }];
+              : [..._store.messages, { role: 'assistant' as const, content, reasoning: reasoning || undefined }];
             _store = {
               ..._store,
               status: 'idle',
               streamingText: '',
+              reasoningText: '',
               messages: newMessages,
             };
             notify();
@@ -201,7 +219,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
   }, []);
 
   const clear = useCallback(() => {
-    _store = { status: 'idle', streamingText: '', messages: [], lastError: null, toolCalls: null, pendingCode: null };
+    _store = { status: 'idle', streamingText: '', reasoningText: '', messages: [], lastError: null, toolCalls: null, pendingCode: null };
     notify();
   }, []);
 

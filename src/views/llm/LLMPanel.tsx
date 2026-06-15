@@ -27,6 +27,7 @@ const LLMPanel = ({
   const {
     status,
     streamingText,
+    reasoningText,
     messages,
     lastError,
     pendingCode,
@@ -46,13 +47,13 @@ const LLMPanel = ({
   const codeSnapshotRef = useRef<string | null>(null);
   const [showDivergentWarning, setShowDivergentWarning] = useState(false);
 
-  const hasOutput = messages.length > 0 || !!streamingText || !!lastError || !!pendingCode;
+  const hasOutput = messages.length > 0 || !!streamingText || !!reasoningText || !!lastError || !!pendingCode;
 
   const canSend = input.trim() && status !== "streaming" && isConfigured;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingText]);
+  }, [messages, streamingText, reasoningText]);
 
   const handleSend = useCallback(() => {
     if (!canSend) return;
@@ -214,7 +215,27 @@ const LLMPanel = ({
               fontFamily: msg.role === 'assistant' ? 'inherit' : 'inherit',
               fontSize: 'sm',
             })}>
-              {msg.role === 'user' ? msg.content : renderResponse(msg.content)}
+              {msg.role === 'user' ? msg.content : (
+                <>
+                  {(msg as any).reasoning && (
+                    <div className={css({
+                      fontSize: 'sm',
+                      color: 'stone.500',
+                      fontStyle: 'italic',
+                      whiteSpace: 'pre-wrap',
+                      mb: '2',
+                      p: '2',
+                      bg: 'stone.800/50',
+                      borderRadius: 'md',
+                      borderLeft: '2px solid',
+                      borderColor: 'stone.600',
+                    })}>
+                      {(msg as any).reasoning}
+                    </div>
+                  )}
+                  {renderResponse(msg.content)}
+                </>
+              )}
             </div>
           </div>
         ))}
@@ -239,6 +260,24 @@ const LLMPanel = ({
                 fontSize: 'xs',
               })}>streaming...</span>
             </div>
+            {reasoningText && (
+              <div className={css({
+                fontSize: 'sm',
+                color: 'stone.500',
+                fontStyle: 'italic',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                lineHeight: '1.5',
+                mb: '2',
+                p: '2',
+                bg: 'stone.800/50',
+                borderRadius: 'md',
+                borderLeft: '2px solid',
+                borderColor: 'stone.600',
+              })}>
+                {reasoningText}
+              </div>
+            )}
             <div className={css({
               fontSize: 'sm',
               color: 'stone.300',

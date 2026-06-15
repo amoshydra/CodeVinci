@@ -3,10 +3,12 @@ import { llmConfigStore, type LlmTool, type LlmToolCall } from './config';
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
+  reasoning?: string;
 }
 
 export interface StreamCallbacks {
   onToken: (token: string) => void;
+  onReasoning?: (token: string) => void;
   onComplete: (fullResponse: string) => void;
   onError: (error: Error) => void;
   onToolCalls?: (toolCalls: LlmToolCall[]) => void;
@@ -134,6 +136,10 @@ export class LLMClient {
             if (delta.content) {
               fullResponse += delta.content;
               callbacks.onToken(delta.content);
+            }
+
+            if (delta.reasoning_content && callbacks.onReasoning) {
+              callbacks.onReasoning(delta.reasoning_content);
             }
 
             if (delta.tool_calls) {
