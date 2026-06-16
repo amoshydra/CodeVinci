@@ -47,7 +47,7 @@ export const ShareButtonDialog = (props: ShareButtonDialogProps) => {
       >
         <ShareButtonDialogQrBox
           value={shareUrl}
-          visible={true}
+          visible={props.isOpen}
         />
 
         <ShareInputBox value={shareUrl} />

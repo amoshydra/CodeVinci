@@ -29,11 +29,9 @@ export const ShareButtonDialogQrBox = ({ value, visible }: ShareButtonDialogQrBo
       <Suspense fallback={<div className={css({ color: "white" })}>Loading...</div>}>
         <ErrorBoundary
           key={value.length}
-          fallback={(error) => (
-            <div className={css({ color: "red.400", textAlign: "center" })}>
-              Failed to generate QR code
-              <br />
-              {error.message}
+          fallback={() => (
+            <div className={css({ color: "slate.400", textAlign: "center", fontSize: "sm", paddingX: "4" })}>
+              URL is too long to display as QR code
             </div>
           )}
         >
