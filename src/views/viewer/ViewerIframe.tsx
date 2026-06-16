@@ -26,7 +26,7 @@ export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIf
     const handler = (event: MessageEvent) => {
       const data = event.data || {};
       if (event.origin === "null" && data._id === "codevinci") {
-        const { _id, ...rest } = data;
+        const { _id: _, ...rest } = data;
         onFrameMessage(rest);
       }
       if (event.origin === "null" && data._id === "codevinci-storage-sync") {
