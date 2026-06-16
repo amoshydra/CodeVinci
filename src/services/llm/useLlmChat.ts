@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { llmClient } from './client';
-import { llmConfigStore, type LlmToolCall, CODE_GENERATION_TOOL } from './config';
+import { llmConfigStore, type LlmToolCall, CODE_GENERATION_TOOL, APPLY_EDITS_TOOL } from './config';
+import { applyEdits } from './applyEdits';
 import type { ChatMessage } from './client';
 
 const MAX_HISTORY_CHARS = 16000;
@@ -195,14 +196,29 @@ export function useLlmChat(initialSystemPrompt?: string) {
           if (requestIdRef.current !== requestId) return;
           toolCallReasoningRef.current = streamingTextRef.current;
           const codeCall = toolCalls.find((t) => t.name === 'set_code');
-          const pendingCode =
-            codeCall?.arguments && typeof codeCall.arguments.code === 'string'
-              ? codeCall.arguments.code
-              : null;
+          const editCall = toolCalls.find((t) => t.name === 'apply_edits');
+          let pendingCode: string | null = null;
+
+          if (codeCall?.arguments && typeof codeCall.arguments.code === 'string') {
+            pendingCode = codeCall.arguments.code;
+          } else if (editCall?.arguments) {
+            const edits = (editCall.arguments as any).edits;
+            if (Array.isArray(edits) && codeSnapshot) {
+              const { result, error } = applyEdits(codeSnapshot, edits);
+              if (error) {
+                const errMsg: ChatMessage = { role: 'assistant', content: `⚠️ Edit failed: ${error}\n\nYou can ask the AI to retry with more precise search text.` };
+                _store = { ..._store, messages: [..._store.messages, errMsg] };
+                notify();
+                return;
+              }
+              pendingCode = result;
+            }
+          }
+
           _store = { ..._store, toolCalls, pendingCode };
           notify();
         },
-      }, [CODE_GENERATION_TOOL]);
+      }, [CODE_GENERATION_TOOL, APPLY_EDITS_TOOL]);
     } catch (error) {
       if (requestIdRef.current !== requestId) return;
       _store = { ..._store, status: 'error', streamingText: '', lastError: error instanceof Error ? error.message : 'Unknown error' };

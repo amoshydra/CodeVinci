@@ -47,6 +47,19 @@ function mockReasoningResponse(reasoning: string, content: string): string {
   return chunks.join('\n\n');
 }
 
+function mockEditToolCallResponse(reasoning: string, edits: Array<{ search: string; replace: string }>): string {
+  const argsJson = JSON.stringify({ edits });
+  const escapedArgs = JSON.stringify(argsJson);
+  return [
+    `data: {"choices":[{"delta":{"content":"${reasoning}"}}]}`,
+    `data: {"choices":[{"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"id":"call_1","function":{"name":"apply_edits","arguments":""}}]}}]}`,
+    `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":${escapedArgs}}}]}}]}`,
+    `data: {"choices":[{"delta":{}}],"usage":{}}`,
+    `data: {"choices":[{"delta":{},"finish_reason":"tool_calls"}]}`,
+    'data: [DONE]',
+  ].join('\n\n');
+}
+
 test.describe('AI Integration', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:5173');
@@ -270,6 +283,86 @@ test.describe('AI Integration', () => {
     // The code review section should be gone
     await expect(page.getByText('Code generated')).not.toBeVisible({ timeout: 2000 });
     await expect(page.getByRole('button', { name: 'Accept code' })).not.toBeVisible({ timeout: 1000 });
+  });
+
+  test('AI Chat: apply_edits replaces targeted text in existing code', async ({ page }) => {
+    await acceptDisclaimer(page);
+
+    // Set up initial code in the editor
+    const initialCode = 'let count = 0;\nfunction inc() { count++; }';
+    await page.selectOption('select', 'view-edit');
+    await page.waitForTimeout(1000);
+
+    // Write initial code via evaluate (more reliable than keyboard.type for CodeMirror)
+    await page.evaluate((code) => {
+      // Trigger React's onValueChange by dispatching a custom event
+      const cmContent = document.querySelector('.cm-content') as HTMLElement;
+      if (cmContent) {
+        cmContent.focus();
+        document.execCommand('selectAll');
+        document.execCommand('insertText', false, code);
+      }
+    }, initialCode);
+    await page.waitForTimeout(1000);
+
+    // Switch to AI Chat
+    await page.selectOption('select', 'ai-chat');
+    await page.waitForTimeout(2000);
+
+    // Mock apply_edits tool call
+    await page.route('**/chat/completions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: mockEditToolCallResponse('Renaming count to counter.', [
+          { search: 'let count', replace: 'let counter' },
+          { search: 'count++;', replace: 'counter++;' },
+          { search: 'function inc', replace: 'function increment' },
+        ]),
+      });
+    });
+
+    await page.locator('textarea[placeholder*="Ask AI"]').fill('rename to counter');
+    await page.keyboard.press('Control+Enter');
+    await page.waitForTimeout(3000);
+
+    // Pending code should show the edited result with diff
+    await expect(page.getByText('let counter = 0;').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('function increment').first()).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole('button', { name: 'Accept code' })).toBeVisible({ timeout: 3000 });
+  });
+
+  test('AI Chat: apply_edits shows error when search text not found', async ({ page }) => {
+    await acceptDisclaimer(page);
+    await page.selectOption('select', 'view-edit');
+    await page.waitForTimeout(1000);
+
+    // Write initial code
+    // Write initial code
+    await page.evaluate(() => {
+      const el = document.querySelector('.cm-content') as HTMLElement;
+      if (el) { el.focus(); document.execCommand('selectAll'); document.execCommand('insertText', false, 'let x = 1;'); }
+    });
+    await page.waitForTimeout(500);
+
+    await page.selectOption('select', 'ai-chat');
+    await page.waitForTimeout(2000);
+
+    // Mock apply_edits with a search that won't match
+    await page.route('**/chat/completions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: mockEditToolCallResponse('Changing y.', [{ search: 'let y', replace: 'let z' }]),
+      });
+    });
+
+    await page.locator('textarea[placeholder*="Ask AI"]').fill('change y to z');
+    await page.keyboard.press('Control+Enter');
+    await page.waitForTimeout(3000);
+
+    // Should show an error message in the chat
+    await expect(page.getByText(/Edit failed|search text not found/i)).toBeVisible({ timeout: 5000 });
   });
 
   test('AI Chat: API request includes correct auth and model', async ({ page }) => {

@@ -26,6 +26,28 @@ export const CODE_GENERATION_TOOL: LlmTool = {
   }
 };
 
+export const APPLY_EDITS_TOOL: LlmTool = {
+  name: "apply_edits",
+  description: "Apply one or more search-and-replace edits to the existing code. Use this for small, targeted changes instead of rewriting the entire file. Each edit must have a unique search string that appears exactly once in the code.",
+  parameters: {
+    type: "object",
+    properties: {
+      edits: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            search: { type: "string", description: "Exact text to find in the code. Must match exactly including whitespace and must appear only once." },
+            replace: { type: "string", description: "Text to replace it with." }
+          },
+          required: ["search", "replace"]
+        }
+      }
+    },
+    required: ["edits"]
+  }
+};
+
 export interface LLMConfig {
   provider: LlmProvider;
   apiEndpoint: string;
