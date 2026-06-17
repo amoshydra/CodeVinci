@@ -224,12 +224,15 @@ const LLMPanel = ({
         flex: '1',
         overflowY: 'auto',
         px: '3',
-        py: '2',
+        py: '3',
         minH: '0',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '3',
       })}>
         {!hasOutput && (
           <div className={css({
-            py: '8',
+            py: '12',
             textAlign: 'center',
             fontSize: 'sm',
             color: 'stone.600',
@@ -242,45 +245,23 @@ const LLMPanel = ({
 
         {messages.map((msg, i) => (
           <div key={i} className={css({
-            py: '2',
-            borderBottom: i < messages.length - 1 ? '1px solid' : 'none',
-            borderColor: 'stone.800',
+            display: 'flex',
+            justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
           })}>
             <div className={css({
-              fontSize: 'xs',
-              color: msg.role === 'user' ? 'sky.400' : 'stone.500',
-              mb: '1',
-              fontFamily: 'mono',
-              letterSpacing: '0.02em',
+              maxW: '85%',
+              minW: '0',
+              px: '3',
+              py: '2',
+              borderRadius: 'lg',
+              bg: msg.role === 'user' ? 'stone.800' : 'transparent',
+              ...(msg.role === 'user' ? {
+                borderBottomRightRadius: 'sm',
+              } : {}),
             })}>
-              {msg.role === 'user' ? 'You' : 'AI'}
-            </div>
-            <div className={css({
-              color: msg.role === 'user' ? 'stone.200' : 'stone.300',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-              lineHeight: '1.5',
-              fontFamily: msg.role === 'assistant' ? 'inherit' : 'inherit',
-              fontSize: 'sm',
-            })}>
-              {msg.role === 'user' ? msg.content : (
+              {msg.role === 'assistant' && (
                 <>
-                  {(msg as ChatMessage).reasoning && (
-                    <div className={css({
-                      fontSize: 'sm',
-                      color: 'stone.500',
-                      fontStyle: 'italic',
-                      whiteSpace: 'pre-wrap',
-                      mb: '2',
-                      p: '2',
-                      bg: 'stone.800/50',
-                      borderRadius: 'md',
-                      borderLeft: '2px solid',
-                      borderColor: 'stone.600',
-                    })}>
-                      {(msg as ChatMessage).reasoning}
-                    </div>
-                  )}
+                  {(msg as ChatMessage).reasoning && <ReasoningBox text={(msg as ChatMessage).reasoning!} />}
                   {msg.content.startsWith('✓') || msg.content.startsWith('✗') ? (
                     <div className={css({
                       fontSize: 'xs',
@@ -295,56 +276,41 @@ const LLMPanel = ({
                   )}
                 </>
               )}
+              {msg.role === 'user' && (
+                <div className={css({
+                  color: 'stone.200',
+                  fontSize: 'sm',
+                  lineHeight: '1.5',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                })}>
+                  {msg.content}
+                </div>
+              )}
             </div>
           </div>
         ))}
 
         {streamingText && (
-          <div className={css({
-            py: '2',
-            borderTop: messages.length > 0 ? '1px solid' : 'none',
-            borderColor: 'stone.800',
-          })}>
+          <div>
+            {reasoningText && <ReasoningBox text={reasoningText} />}
             <div className={css({
-              fontSize: 'xs',
-              color: 'stone.500',
-              mb: '1',
-              fontFamily: 'mono',
-              letterSpacing: '0.02em',
-            })}>
-              AI
-              <span className={css({
-                ml: '1.5',
-                color: 'amber.400',
-                fontSize: 'xs',
-              })}>streaming...</span>
-            </div>
-            {reasoningText && (
-              <div className={css({
-                fontSize: 'sm',
-                color: 'stone.500',
-                fontStyle: 'italic',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                lineHeight: '1.5',
-                mb: '2',
-                p: '2',
-                bg: 'stone.800/50',
-                borderRadius: 'md',
-                borderLeft: '2px solid',
-                borderColor: 'stone.600',
-              })}>
-                {reasoningText}
-              </div>
-            )}
-            <div className={css({
-              fontSize: 'sm',
               color: 'stone.300',
+              fontSize: 'sm',
+              lineHeight: '1.5',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
-              lineHeight: '1.5',
             })}>
               {renderStreaming(streamingText)}
+              <span className={css({
+                display: 'inline-block',
+                width: '6px',
+                height: '1em',
+                bg: 'amber.400',
+                ml: '0.5',
+                animation: 'pulse 1s ease-in-out infinite',
+                verticalAlign: 'text-bottom',
+              })} />
             </div>
           </div>
         )}
@@ -549,6 +515,37 @@ const LLMPanel = ({
   );
 };
 
+function ReasoningBox({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const lines = text.split('\n');
+  const isLong = lines.length > 3;
+  return (
+    <div className={css({
+      fontSize: 'sm', color: 'stone.500', fontStyle: 'italic',
+      whiteSpace: 'pre-wrap', mb: '2', p: '2',
+      bg: 'stone.800/30', borderRadius: 'md',
+      borderLeft: '2px solid', borderColor: 'stone.600',
+    })}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={css({
+          display: 'flex', alignItems: 'center', gap: '1',
+          fontSize: 'xs', color: 'stone.400', mb: open ? '1' : '0',
+          cursor: 'pointer', bg: 'transparent', border: 'none', p: '0',
+          fontFamily: 'inherit',
+          _hover: { color: 'stone.200' },
+        })}
+      >
+        <span className={css({ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' })}>▶</span>
+        {open ? 'Hide reasoning' : isLong ? `Show reasoning (${lines.length} lines)` : 'Show reasoning'}
+      </button>
+      {open && text.split('\n').map((line, i) => (
+        <div key={i} className={css({ py: '0.5' })}>{line || '\u00A0'}</div>
+      ))}
+    </div>
+  );
+}
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
@@ -560,17 +557,30 @@ function renderResponse(text: string): ReactNode[] {
   return splitCodeBlocks(escapeHtml(text)).map((part, i) => {
     if (part.type === 'code') {
       return (
-        <pre key={i} className={css({
-          bg: 'stone.950',
-          p: '2',
-          my: '1.5',
-          borderRadius: 'md',
-          overflowX: 'auto',
-          fontSize: 'xs',
-          fontFamily: 'mono',
-          color: 'stone.200',
-          lineHeight: '1.4',
-        })}>{part.content}</pre>
+        <div key={i} className={css({ position: 'relative' })}>
+          <div className={css({
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            px: '2', py: '0.5', bg: 'stone.900',
+            borderTopLeftRadius: 'md', borderTopRightRadius: 'md',
+            fontSize: 'xs', color: 'stone.500', fontFamily: 'mono',
+          })}>
+            <span>code</span>
+            <button
+              onClick={() => navigator.clipboard.writeText(part.content)}
+              className={css({
+                bg: 'transparent', border: 'none', color: 'stone.500', cursor: 'pointer',
+                px: '1', py: '0.5', borderRadius: 'sm', fontSize: 'xs',
+                _hover: { color: 'stone.200', bg: 'stone.700' },
+              })}
+            >Copy</button>
+          </div>
+          <pre className={css({
+            bg: 'stone.950', p: '2',
+            borderBottomLeftRadius: 'md', borderBottomRightRadius: 'md',
+            overflowX: 'auto', fontSize: 'xs', fontFamily: 'mono',
+            color: 'stone.200', lineHeight: '1.4',
+          })}>{part.content}</pre>
+        </div>
       );
     }
     return (
