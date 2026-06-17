@@ -332,6 +332,51 @@ test.describe('AI Integration', () => {
     await expect(page.getByRole('button', { name: 'Accept code' })).toBeVisible({ timeout: 3000 });
   });
 
+  test('AI Chat: apply_edits works with multiline search/replace', async ({ page }) => {
+    await acceptDisclaimer(page);
+
+    const initialCode = `let count = 0;
+
+function inc() {
+  count++;
+}
+
+console.log(count);`;
+
+    await page.selectOption('select', 'view-edit');
+    await page.waitForTimeout(1000);
+    await page.evaluate((code) => {
+      const el = document.querySelector('.cm-content') as HTMLElement;
+      if (el) { el.focus(); document.execCommand('selectAll'); document.execCommand('insertText', false, code); }
+    }, initialCode);
+    await page.waitForTimeout(500);
+
+    await page.selectOption('select', 'ai-chat');
+    await page.waitForTimeout(2000);
+
+    // Replace a multiline block (function inc entirely)
+    await page.route('**/chat/completions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: mockEditToolCallResponse('Rewriting inc to use arrow function.', [
+          {
+            search: 'function inc() {\n  count++;\n}',
+            replace: 'const inc = () => count++;',
+          },
+        ]),
+      });
+    });
+
+    await page.locator('textarea[placeholder*="Ask AI"]').fill('use arrow function');
+    await page.keyboard.press('Control+Enter');
+    await page.waitForTimeout(3000);
+
+    // The multiline replacement should produce valid code
+    await expect(page.getByText('const inc = () => count++;').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: 'Accept code' })).toBeVisible({ timeout: 3000 });
+  });
+
   test('AI Chat: apply_edits shows error when search text not found', async ({ page }) => {
     await acceptDisclaimer(page);
     await page.selectOption('select', 'view-edit');
