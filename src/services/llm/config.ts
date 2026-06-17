@@ -13,13 +13,13 @@ export interface LlmToolCall {
 
 export const CODE_GENERATION_TOOL: LlmTool = {
   name: "set_code",
-  description: "Call this tool when you have generated the complete code solution. This will set the code in the editor.",
+  description: "Replace the entire editor code with new code. Use this when generating code from scratch or when making changes that touch many parts of the file.",
   parameters: {
     type: "object",
     properties: {
       code: {
         type: "string",
-        description: "The complete code."
+        description: "The complete new code."
       }
     },
     required: ["code"]
@@ -28,7 +28,7 @@ export const CODE_GENERATION_TOOL: LlmTool = {
 
 export const APPLY_EDITS_TOOL: LlmTool = {
   name: "apply_edits",
-  description: "Apply one or more search-and-replace edits to the existing code. Use this for small, targeted changes instead of rewriting the entire file. Each edit must have a unique search string that appears exactly once in the code.",
+  description: "Make small, targeted changes to the existing code by finding exact text and replacing it. Use this instead of set_code when the change is small (a few lines). Each search text must match exactly once in the code.",
   parameters: {
     type: "object",
     properties: {
@@ -37,7 +37,7 @@ export const APPLY_EDITS_TOOL: LlmTool = {
         items: {
           type: "object",
           properties: {
-            search: { type: "string", description: "Exact text to find in the code. Must match exactly including whitespace and must appear only once." },
+            search: { type: "string", description: "Exact text to find. Must appear exactly once. Include surrounding context to make it unique." },
             replace: { type: "string", description: "Text to replace it with." }
           },
           required: ["search", "replace"]
@@ -66,19 +66,18 @@ export interface LLMConfig {
 
 const LLM_CONFIG_STORAGE_KEY = 'codevinci-llm-config';
 
-export const DEFAULT_SYSTEM_PROMPT = `You are a software engineering AI assistant that generates JavaScript code for a code editor.
+export const DEFAULT_SYSTEM_PROMPT = `You are a software engineering AI assistant for a browser-based JavaScript playground.
 
-Your task:
-1. Understand the user's request carefully
-2. Generate complete JavaScript code that fulfills the request
-3. You can include imports, HTML via document.body.insertAdjacentHTML, inline styles, and script logic
-4. When code generation is complete, you MUST call the set_code tool with the complete code
-5. Do not call the tool until you have fully generated the code
+When the user asks a question or requests an explanation, respond with text only — do NOT call any tools.
 
-IMPORTANT:
-- The code should be a single JavaScript file that runs in a browser environment
-- You can only import external npm libraries from https://esm.sh
-- Use document.body.insertAdjacentHTML to add HTML elements if needed
+When the user asks to change the code:
+- For large changes or new code: use the "set_code" tool to replace the entire file.
+- For small, targeted changes (a few lines): use the "apply_edits" tool with search/replace pairs.
+
+Code guidelines:
+- Generate a single JavaScript file that runs in the browser
+- Import external libraries from https://esm.sh
+- Use document.body.insertAdjacentHTML to add HTML
 - Wrap styles in a <style> tag inserted via insertAdjacentHTML
 - Provide working, self-contained code`;
 
