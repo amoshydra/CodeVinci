@@ -206,9 +206,24 @@ export function useLlmChat(initialSystemPrompt?: string) {
             if (Array.isArray(edits) && codeSnapshot) {
               const { result, error } = applyEdits(codeSnapshot, edits);
               if (error) {
-                const errMsg: ChatMessage = { role: 'assistant', content: `⚠️ Edit failed: ${error}\n\nYou can ask the AI to retry with more precise search text.` };
-                _store = { ..._store, messages: [..._store.messages, errMsg] };
+                // Track retries in session storage to avoid infinite loops
+                let retryCount = 0;
+                try {
+                  retryCount = parseInt(sessionStorage.getItem('codevinci-edit-retry') || '0', 10);
+                } catch {}
+                if (retryCount >= 2) {
+                  sessionStorage.removeItem('codevinci-edit-retry');
+                  const errMsg: ChatMessage = { role: 'assistant', content: `⚠️ Edit failed after ${retryCount} retries: ${error}. Check the code and search text manually.` };
+                  _store = { ..._store, messages: [..._store.messages, errMsg] };
+                  notify();
+                  return;
+                }
+                try { sessionStorage.setItem('codevinci-edit-retry', String(retryCount + 1)); } catch {}
+                const retryMsg = `The edits you proposed failed:\n${error}\n\nFix the search text and try again. Each search must match exactly once. Include enough surrounding context.`;
+                const retryChat: ChatMessage = { role: 'user' as const, content: retryMsg };
+                _store = { ..._store, messages: [..._store.messages, retryChat] };
                 notify();
+                setTimeout(() => send(retryMsg, { code: codeSnapshot }), 0);
                 return;
               }
               pendingCode = result;

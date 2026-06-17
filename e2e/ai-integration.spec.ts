@@ -361,8 +361,8 @@ test.describe('AI Integration', () => {
     await page.keyboard.press('Control+Enter');
     await page.waitForTimeout(3000);
 
-    // Should show an error message in the chat
-    await expect(page.getByText(/Edit failed|search text not found/i)).toBeVisible({ timeout: 5000 });
+    // After retries, the final error message should be visible
+    await expect(page.getByText(/failed after.*retr/i).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('AI Chat: API request includes correct auth and model', async ({ page }) => {
