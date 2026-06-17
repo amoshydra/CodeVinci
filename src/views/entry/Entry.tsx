@@ -1,5 +1,6 @@
 import { HTMLAttributes, lazy, Suspense, useCallback, useEffect, useDeferredValue, useMemo, useState } from "react";
 import { css } from "../../../styled-system/css";
+import { ActionButton } from "../../components/ActionButton";
 import { EntryContentGrid, A as GridArea } from "../../components/EntryContentGrid";
 import { Dialog } from "../../components/Dialog";
 import { SettingsMode, UseSettingsReturn } from "../../services/settings";
@@ -38,6 +39,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
   const [settingsOpen, setSettingsOpen] = useState(() => {
     try { return sessionStorage.getItem('codevinci-reopen-settings') === 'true'; } catch { return false; }
   });
+  const [externalError, setExternalError] = useState<string | null>(null);
 
   const [aiStatus, setAiStatus] = useState<LlmStatus>('idle');
   const [aiPendingCode, setAiPendingCode] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
     if (newViewMode === "external") {
       esbuildLaunchInNewWindow(deferredCode, settings)
         .catch(e => {
-          alert("Unable to open. See error: " + e.message);
+          setExternalError(e.message);
         });
       return;
     }
@@ -222,6 +224,23 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
             onClose={() => setSettingsOpen(false)}
           />
         </Suspense>
+      </Dialog>
+
+      {/* External load error dialog */}
+      <Dialog
+        id="external-error"
+        title="Unable to Open"
+        isOpen={externalError !== null}
+        onClose={() => setExternalError(null)}
+      >
+        <p className={css({ fontSize: 'sm', color: 'stone.300', mb: '4', whiteSpace: 'pre-wrap' })}>
+          {externalError}
+        </p>
+        <div className={css({ display: 'flex', gap: '2', justifyContent: 'flex-end' })}>
+          <ActionButton size="sm" visual="secondary" onClick={() => setExternalError(null)}>
+            Close
+          </ActionButton>
+        </div>
       </Dialog>
     </div>
   );
