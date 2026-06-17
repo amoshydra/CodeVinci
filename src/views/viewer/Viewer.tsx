@@ -1,5 +1,5 @@
 import { serialize } from "@ungap/structured-clone";
-import { HTMLAttributes, memo } from "react";
+import { HTMLAttributes, memo, useEffect } from "react";
 import { css } from "../../../styled-system/css";
 import { useBuilder, type UseBuilderEsbuildOptions } from "../../services/builder";
 import { useEsbuild } from "../../services/esbuild";
@@ -29,11 +29,16 @@ export const Viewer = memo(({ code, esbuildOptions, onFrameMessage, ...props }: 
 const ViewerBuilder = memo(({ code, esbuildOptions, onFrameMessage, ...props }: ViewerProps) => {
   const [error, , result] = useBuilder(code, esbuildOptions);
 
+  useEffect(() => {
+    if (error) {
+      onFrameMessage({
+        method: "build.error",
+        args: serialize([error]),
+      });
+    }
+  }, [error, onFrameMessage]);
+
   if (error) {
-    onFrameMessage({
-      method: "build.error",
-      args: serialize([error]),
-    });
     return <ViewerErrorView title={error.message} error={error} {...props} />;
   }
 
