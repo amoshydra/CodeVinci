@@ -5,11 +5,14 @@ import { ChatBubble, SettingsGear, SendArrow, Paperclip } from "../../components
 import { Dialog } from "../../components/Dialog";
 import { useLlmChat, type LlmStatus } from "../../services/llm";
 import { llmConfigStore } from "../../services/llm/config";
+import { canUndo, canRedo } from "../../services/codeHistory";
 
 export interface LLMPanelProps {
   code?: string;
   onCodeChange?: (code: string) => void;
   onSettingsClick: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
   errorCount?: number;
   errorContext?: string;
   onStatusChange?: (status: LlmStatus) => void;
@@ -21,6 +24,8 @@ const LLMPanel = ({
   code,
   onCodeChange,
   onSettingsClick,
+  onUndo,
+  onRedo,
   errorCount = 0,
   errorContext = '',
   onStatusChange,
@@ -191,6 +196,20 @@ const LLMPanel = ({
               px: '1.5', py: '0.5', borderRadius: 'md', fontSize: 'xs',
               _hover: { color: 'stone.200', bg: 'stone.800' },
             })}>Clear</button>
+          )}
+          {canUndo() && (
+            <button onClick={onUndo} className={css({
+              bg: 'transparent', border: 'none', color: 'stone.500', cursor: 'pointer',
+              px: '1', py: '0.5', borderRadius: 'md', fontSize: 'xs',
+              _hover: { color: 'stone.200', bg: 'stone.800' },
+            })} title="Undo (Ctrl+Z)">↩</button>
+          )}
+          {canRedo() && (
+            <button onClick={onRedo} className={css({
+              bg: 'transparent', border: 'none', color: 'stone.500', cursor: 'pointer',
+              px: '1', py: '0.5', borderRadius: 'md', fontSize: 'xs',
+              _hover: { color: 'stone.200', bg: 'stone.800' },
+            })} title="Redo">↪</button>
           )}
           <button onClick={onSettingsClick} aria-label="Settings" className={css({
             bg: 'transparent', border: 'none', color: 'stone.500', cursor: 'pointer',

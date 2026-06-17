@@ -11,6 +11,7 @@ import { Editor } from "../editor/Editor";
 import { TopBar } from "../top-bar/TopBar";
 import { Viewer } from "../viewer/Viewer";
 import type { LlmStatus } from "../../services/llm";
+import { pushSnapshot, undo as historyUndo, redo as historyRedo } from "../../services/codeHistory";
 
 const LLMPanel = lazy(() => import("../llm/LLMPanel"));
 const LlmSettings = lazy(() => import("../llm/LlmSettings"));
@@ -69,8 +70,19 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
   }, [onSettingUpdate, deferredCode, settings]);
 
   const handleLLMCodeChange = useCallback((pendingCode: string) => {
+    pushSnapshot(code);
     onCodeChange(pendingCode);
-  }, [onCodeChange]);
+  }, [onCodeChange, code]);
+
+  const handleUndo = useCallback(() => {
+    const prev = historyUndo(code);
+    if (prev !== null) onCodeChange(prev);
+  }, [code, onCodeChange]);
+
+  const handleRedo = useCallback(() => {
+    const next = historyRedo(code);
+    if (next !== null) onCodeChange(next);
+  }, [code, onCodeChange]);
 
   return (
     <div
@@ -183,6 +195,8 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               code={code}
               onCodeChange={handleLLMCodeChange}
               onSettingsClick={() => setSettingsOpen(true)}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
               errorCount={counts.error}
               errorContext={errorContext}
               onStatusChange={setAiStatus}
