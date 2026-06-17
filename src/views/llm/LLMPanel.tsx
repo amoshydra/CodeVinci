@@ -157,6 +157,11 @@ const LLMPanel = ({
           <span className={css({ fontSize: 'sm', fontWeight: 600, color: 'stone.200' })}>
             AI Chat
           </span>
+          <span className={css({
+            fontSize: 'xs', color: 'amber.400', fontWeight: 'normal',
+            bg: 'amber.900/20', px: '1.5', py: '0.5', borderRadius: 'sm',
+            lineHeight: '1',
+          })}>Experimental</span>
           <select
             value={llmConfigStore.config.defaultModel || ''}
             onChange={(e) => handleModelChange(e.target.value)}

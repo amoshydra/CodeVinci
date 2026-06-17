@@ -196,6 +196,12 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
         <div>
           <div className={css({ fontWeight: 'semibold', fontSize: 'sm', color: 'stone.100' })}>
             AI Features
+            <span className={css({
+              ml: '1.5', fontSize: 'xs', fontWeight: 'normal',
+              color: 'amber.400', bg: 'amber.900/30',
+              px: '1.5', py: '0.5', borderRadius: 'sm',
+              verticalAlign: 'middle',
+            })}>Experimental</span>
           </div>
           <div className={css({ fontSize: 'xs', color: 'stone.500', mt: '0.5' })}>
             {enableLlm ? 'Enabled — configure provider below' : 'Disabled'}
