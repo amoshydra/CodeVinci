@@ -202,7 +202,8 @@ export function useLlmChat(initialSystemPrompt?: string) {
           if (codeCall?.arguments && typeof codeCall.arguments.code === 'string') {
             pendingCode = codeCall.arguments.code;
           } else if (editCall?.arguments) {
-            const edits = (editCall.arguments as any).edits;
+            const editsArg = editCall.arguments;
+            const edits = 'edits' in editsArg && Array.isArray(editsArg.edits) ? editsArg.edits as Array<{ search: string; replace: string }> : null;
             if (Array.isArray(edits) && codeSnapshot) {
               const { result, error } = applyEdits(codeSnapshot, edits);
               if (error) {
@@ -233,7 +234,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
           _store = { ..._store, toolCalls, pendingCode };
           notify();
         },
-      }, [CODE_GENERATION_TOOL, APPLY_EDITS_TOOL]);
+      }, [CODE_GENERATION_TOOL, APPLY_EDITS_TOOL], abortControllerRef.current.signal);
     } catch (error) {
       if (requestIdRef.current !== requestId) return;
       _store = { ..._store, status: 'error', streamingText: '', lastError: error instanceof Error ? error.message : 'Unknown error' };

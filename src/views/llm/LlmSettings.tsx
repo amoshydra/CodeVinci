@@ -104,8 +104,8 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
         apiEndpoint: endpoint,
         apiKey: testKey,
         defaultModel: defaultModel || 'gpt-4o',
-      }, async () => {
-        const client = new LLMClient();
+      }, async (cfg) => {
+        const client = new LLMClient(cfg);
         return await client.testConnection().catch(() => false);
       });
       setTestResult({
@@ -134,8 +134,8 @@ export const LlmSettings = ({ enableLlm, onEnableLlmChange, onClose }: LlmSettin
         provider,
         apiEndpoint: endpoint,
         apiKey: fetchKey,
-      }, async () => {
-        const client = new LLMClient();
+      }, async (cfg) => {
+        const client = new LLMClient(cfg);
         return await client.fetchModels().catch(() => []);
       });
       setModels(fetched);

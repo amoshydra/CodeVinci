@@ -183,14 +183,8 @@ export class LLMConfigStore {
     return !!cur && cur !== this.config.cspOrigin;
   }
 
-  async withConfig<T>(partial: Partial<LLMConfig>, fn: () => T | Promise<T>): Promise<T> {
-    const prev = this.config;
-    this.config = { ...prev, ...partial };
-    try {
-      return await fn();
-    } finally {
-      this.config = prev;
-    }
+  async withConfig<T>(partial: Partial<LLMConfig>, fn: (config: LLMConfig) => T | Promise<T>): Promise<T> {
+    return fn({ ...this.config, ...partial });
   }
 }
 

@@ -4,6 +4,7 @@ import { ActionButton } from "../../components/ActionButton";
 import { ChatBubble, SettingsGear, SendArrow, Paperclip } from "../../components/Icons";
 import { Dialog } from "../../components/Dialog";
 import { useLlmChat, type LlmStatus } from "../../services/llm";
+import type { ChatMessage } from "../../services/llm";
 import { llmConfigStore } from "../../services/llm/config";
 import { canUndo, canRedo } from "../../services/codeHistory";
 
@@ -61,9 +62,8 @@ const LLMPanel = ({
   // Fetch models on mount if not already available
   useEffect(() => {
     if (models.length === 0 && llmConfigStore.isConfigured()) {
-      import("../../services/llm").then(({ LLMClient }) => {
-        const client = new LLMClient();
-        client.fetchModels().then(m => { if (m.length > 0) setModels(m); }).catch(() => {});
+      import("../../services/llm").then(({ llmClient }) => {
+        llmClient.fetchModels().then(m => { if (m.length > 0) setModels(m); }).catch(() => {});
       });
     }
   }, []);
@@ -265,7 +265,7 @@ const LLMPanel = ({
             })}>
               {msg.role === 'user' ? msg.content : (
                 <>
-                  {(msg as any).reasoning && (
+                  {(msg as ChatMessage).reasoning && (
                     <div className={css({
                       fontSize: 'sm',
                       color: 'stone.500',
@@ -278,7 +278,7 @@ const LLMPanel = ({
                       borderLeft: '2px solid',
                       borderColor: 'stone.600',
                     })}>
-                      {(msg as any).reasoning}
+                      {(msg as ChatMessage).reasoning}
                     </div>
                   )}
                   {msg.content.startsWith('✓') || msg.content.startsWith('✗') ? (

@@ -1,8 +1,10 @@
 const SESSION_KEYS = [
-  'accepted-disclaimer',
+  'codevinci-accepted-disclaimer',
   'codevinci-llm-history',
   'codevinci-iframe-localStorage',
   'codevinci-reopen-settings',
+  'codevinci-edit-retry',
+  'codevinci-code-history',
 ];
 
 export function resetSession(): void {

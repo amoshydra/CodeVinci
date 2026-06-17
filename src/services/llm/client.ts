@@ -1,4 +1,4 @@
-import { llmConfigStore, type LlmTool, type LlmToolCall } from './config';
+import { llmConfigStore, type LlmTool, type LlmToolCall, type LLMConfig } from './config';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -19,9 +19,10 @@ function normalizeEndpoint(endpoint: string): string {
 }
 
 export class LLMClient {
-  private config = llmConfigStore.config;
+  private config: LLMConfig;
 
-  constructor() {
+  constructor(config?: LLMConfig) {
+    this.config = config || llmConfigStore.config;
     const handleConfigChange = () => {
       this.config = llmConfigStore.config;
     };
@@ -65,6 +66,7 @@ export class LLMClient {
     messages: ChatMessage[],
     callbacks: StreamCallbacks,
     tools?: LlmTool[],
+    signal?: AbortSignal,
   ): Promise<void> {
     const endpoint = normalizeEndpoint(this.config.apiEndpoint);
     this.toolCallAccumulator.clear();
@@ -94,11 +96,14 @@ export class LLMClient {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
+      signal,
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      callbacks.onError(new Error(`API error: ${response.status} ${errorText}`));
+      // Truncate error text to avoid leaking API keys in the UI
+      const sanitized = errorText.length > 200 ? errorText.slice(0, 200) + '...' : errorText;
+      callbacks.onError(new Error(`API error: ${response.status} ${sanitized}`));
       return;
     }
 
@@ -135,11 +140,11 @@ export class LLMClient {
 
             if (delta.content) {
               fullResponse += delta.content;
-              callbacks.onToken(delta.content);
+              try { callbacks.onToken(delta.content); } catch (e) { console.error('onToken error', e); }
             }
 
             if (delta.reasoning_content && callbacks.onReasoning) {
-              callbacks.onReasoning(delta.reasoning_content);
+              try { callbacks.onReasoning(delta.reasoning_content); } catch (e) { console.error('onReasoning error', e); }
             }
 
             if (delta.tool_calls) {
@@ -183,11 +188,11 @@ export class LLMClient {
           }
         }
         if (toolCalls.length > 0) {
-          callbacks.onToolCalls(toolCalls);
+          try { callbacks.onToolCalls(toolCalls); } catch (e) { console.error('onToolCalls error', e); }
         }
       }
 
-      callbacks.onComplete(fullResponse);
+      try { callbacks.onComplete(fullResponse); } catch (e) { console.error('onComplete error', e); }
     } catch (error) {
       callbacks.onError(error instanceof Error ? error : new Error(String(error)));
     }

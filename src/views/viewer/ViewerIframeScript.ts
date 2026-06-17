@@ -22,8 +22,6 @@ function send(method: string, args: unknown[]) {
   window.parent.postMessage(message, origin);
 }
 
-const konsole = console;
-
 Object.defineProperty(window, "console", {
   value: (
     new Proxy(console, {
@@ -51,16 +49,19 @@ window.addEventListener("error", function ({ error }) {
 });
 
 window.addEventListener("unhandledrejection", function(promiseRejectionEvent) {
-  konsole.log(promiseRejectionEvent);
   send("console.error", [errorToObject(promiseRejectionEvent.reason)]);
 });
 
 
-const errorToObject = (error: any) => ({
-  name: error.name,
-  columnNumber: error.columnNumber,
-  lineNumber: error.lineNumber,
-  fileName: error.fileName,
-  message: error.message,
-  stack: error.stack,
-});
+const errorToObject = (error: unknown): Record<string, unknown> => {
+  if (!error || typeof error !== 'object') return { message: String(error) };
+  const e = error as Record<string, unknown>;
+  return {
+    name: e.name,
+    columnNumber: e.columnNumber,
+    lineNumber: e.lineNumber,
+    fileName: e.fileName,
+    message: e.message,
+    stack: e.stack,
+  };
+};

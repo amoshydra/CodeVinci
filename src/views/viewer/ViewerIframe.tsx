@@ -26,6 +26,7 @@ export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIf
     const handler = (event: MessageEvent) => {
       const data = event.data || {};
       if (event.origin === "null" && data._id === "codevinci") {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { _id: _, ...rest } = data;
         onFrameMessage(rest);
       }

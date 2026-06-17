@@ -16,6 +16,9 @@ export function applyEdits(code: string, edits: TextEdit[]): { result: string; e
   let working = code;
   for (let i = 0; i < edits.length; i++) {
     const { search, replace } = edits[i];
+    if (search === '') {
+      return { result: code, error: `Edit ${i + 1}: empty search string` };
+    }
     const firstIdx = working.indexOf(search);
     
     if (firstIdx === -1) {

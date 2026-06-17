@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const STORAGE_KEY_ACCEPTED_DISCLAIMER = "accepted-disclaimer";
+const STORAGE_KEY_ACCEPTED_DISCLAIMER = "codevinci-accepted-disclaimer";
 const initialIsDisclaimerAccepted =
   sessionStorage.getItem(STORAGE_KEY_ACCEPTED_DISCLAIMER) === "true";
 
