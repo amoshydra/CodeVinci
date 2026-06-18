@@ -262,6 +262,13 @@ export function useLlmChat(initialSystemPrompt?: string) {
     notify();
   }, []);
 
+  const stop = useCallback(() => {
+    abortControllerRef.current?.abort();
+    if (streamTimeoutRef.current) clearTimeout(streamTimeoutRef.current);
+    _store = { ..._store, status: 'idle', streamingText: '', reasoningText: '' };
+    notify();
+  }, []);
+
   useEffect(() => {
     return () => {
       abortControllerRef.current?.abort();
@@ -275,6 +282,7 @@ export function useLlmChat(initialSystemPrompt?: string) {
     acceptCode,
     rejectCode,
     clear,
+    stop,
     isConfigured: llmConfigStore.isConfigured(),
   };
 }

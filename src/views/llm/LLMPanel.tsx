@@ -41,6 +41,7 @@ const LLMPanel = ({
     lastError,
     pendingCode,
     send,
+    stop,
     acceptCode,
     rejectCode,
     clear,
@@ -53,7 +54,10 @@ const LLMPanel = ({
 
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const userScrolledRef = useRef(false);
   const codeSnapshotRef = useRef<string | null>(null);
+  const lastSentRef = useRef<string>('');
   const [showDivergentWarning, setShowDivergentWarning] = useState(false);
   const [models, setModels] = useState<string[]>(llmConfigStore.config.availableModels);
   const [attachedFile, setAttachedFile] = useState<{ name: string; dataUrl: string; type: string } | null>(null);
@@ -94,12 +98,22 @@ const LLMPanel = ({
   const canSend = input.trim() && status !== "streaming" && isConfigured;
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!userScrolledRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, streamingText, reasoningText]);
+
+  const handleScroll = useCallback(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    userScrolledRef.current = !isAtBottom;
+  }, []);
 
   const handleSend = useCallback(() => {
     if (!canSend) return;
     codeSnapshotRef.current = code ?? null;
+    lastSentRef.current = input.trim();
     const options: { code?: string; errors?: string; attachedFile?: { name: string; dataUrl: string; type: string } } = { code };
     if (errorContext) options.errors = errorContext;
     if (attachedFile) options.attachedFile = attachedFile;
@@ -220,7 +234,10 @@ const LLMPanel = ({
       </div>
 
       {/* Messages */}
-      <div className={css({
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className={css({
         flex: '1',
         overflowY: 'auto',
         px: '3',
@@ -383,11 +400,21 @@ const LLMPanel = ({
 
         {lastError && (
           <div className={css({
-            py: '2',
-            fontSize: 'sm',
-            color: 'red.400',
+            p: '3', bg: 'red.900/20', borderRadius: 'md', border: '1px solid',
+            borderColor: 'red.800/30', fontSize: 'sm', color: 'red.300',
           })}>
-            {lastError}
+            <div className={css({ whiteSpace: 'pre-wrap', wordBreak: 'break-word' })}>{lastError}</div>
+            {lastSentRef.current && (
+              <button
+                onClick={() => send(lastSentRef.current, { code })}
+                className={css({
+                  mt: '2', px: '2', py: '1', borderRadius: 'md', border: '1px solid',
+                  borderColor: 'red.700', bg: 'transparent', color: 'red.300',
+                  cursor: 'pointer', fontSize: 'xs',
+                  _hover: { bg: 'red.900/30' },
+                })}
+              >Retry</button>
+            )}
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -478,15 +505,27 @@ const LLMPanel = ({
             },
           })}
         />
-        <ActionButton
-          size="sm"
-          visual="primary"
-          onClick={handleSend}
-          disabled={!canSend}
-          className={css({ display: 'grid', placeItems: 'center', py: '1.5' })}
-        >
-          <SendArrow />
-        </ActionButton>
+        {status === 'streaming' ? (
+          <button onClick={stop} className={css({
+            px: '3', py: '2', borderRadius: 'md', border: 'none',
+            bg: 'red.600', color: 'white', cursor: 'pointer',
+            fontSize: 'sm', fontWeight: 'medium', flexShrink: '0',
+            display: 'grid', placeItems: 'center', gap: '1',
+            _hover: { bg: 'red.500' },
+          })}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>
+          </button>
+        ) : (
+          <ActionButton
+            size="sm"
+            visual="primary"
+            onClick={handleSend}
+            disabled={!canSend}
+            className={css({ display: 'grid', placeItems: 'center', py: '1.5' })}
+          >
+            <SendArrow />
+          </ActionButton>
+        )}
       </div>
       </div>
 
