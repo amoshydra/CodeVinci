@@ -249,14 +249,37 @@ const LLMPanel = ({
       })}>
         {!hasOutput && (
           <div className={css({
-            py: '12',
-            textAlign: 'center',
-            fontSize: 'sm',
-            color: 'stone.600',
+            flex: '1', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            py: '8', px: '4',
           })}>
-            {isConfigured
-              ? 'Ask AI to write or modify code...'
-              : 'Configure AI in Settings to get started'}
+            <ChatBubble className={css({ width: '32', height: '32', color: 'stone.700', mb: '3' })} />
+            <div className={css({ fontSize: 'sm', color: 'stone.500', mb: '4', textAlign: 'center' })}>
+              {isConfigured
+                ? 'Ask AI to write or modify code'
+                : 'Configure AI in Settings to get started'}
+            </div>
+            {isConfigured && (
+              <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '2', justifyContent: 'center' })}>
+                {[
+                  { label: 'Add a counter', prompt: 'Add a counter that increments on click' },
+                  { label: 'Fix errors', prompt: 'Fix any errors in the code' },
+                  { label: 'Make it pretty', prompt: 'Improve the styling and layout' },
+                ].map(s => (
+                  <button
+                    key={s.label}
+                    onClick={() => { setInput(s.prompt); }}
+                    className={css({
+                      px: '2.5', py: '1.5', borderRadius: 'md', border: '1px solid',
+                      borderColor: 'stone.700', bg: 'transparent', color: 'stone.400',
+                      cursor: 'pointer', fontSize: 'xs', fontFamily: 'mono',
+                      transition: 'all 0.15s',
+                      _hover: { borderColor: 'sky.500', color: 'sky.300', bg: 'sky.900/10' },
+                    })}
+                  >{s.label}</button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -526,6 +549,9 @@ const LLMPanel = ({
             <SendArrow />
           </ActionButton>
         )}
+      </div>
+      <div className={css({ px: '3', pb: '1.5', textAlign: 'right', fontSize: 'xs', color: 'stone.600' })}>
+        {isConfigured && 'Ctrl+Enter to send'}
       </div>
       </div>
 
