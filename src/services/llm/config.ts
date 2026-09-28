@@ -1,3 +1,5 @@
+import { safeStorage } from '../../utils/storage';
+
 export type LlmProvider = 'openai-compatible' | 'openai';
 
 export interface LlmTool {
@@ -119,6 +121,11 @@ export function extractOrigin(url: string): string {
   }
 }
 
+const dispatchConfigChange = (): void => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event('codevinci-llm-config-change'));
+};
+
 export class LLMConfigStore {
   config: LLMConfig;
 
@@ -127,7 +134,7 @@ export class LLMConfigStore {
   }
 
   load(): LLMConfig {
-    const stored = localStorage.getItem(LLM_CONFIG_STORAGE_KEY);
+    const stored = safeStorage.getItem(LLM_CONFIG_STORAGE_KEY);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -144,14 +151,14 @@ export class LLMConfigStore {
 
   store(config: LLMConfig): void {
     this.config = config;
-    localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(config));
-    window.dispatchEvent(new Event('codevinci-llm-config-change'));
+    safeStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(config));
+    dispatchConfigChange();
   }
 
   clear(): void {
     this.config = getDefaultLLMConfig();
-    localStorage.removeItem(LLM_CONFIG_STORAGE_KEY);
-    window.dispatchEvent(new Event('codevinci-llm-config-change'));
+    safeStorage.removeItem(LLM_CONFIG_STORAGE_KEY);
+    dispatchConfigChange();
   }
 
   isConfigured(): boolean {
@@ -162,13 +169,13 @@ export class LLMConfigStore {
 
   setConnectionValid(valid: boolean): void {
     this.config.connectionValid = valid;
-    localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(this.config));
-    window.dispatchEvent(new Event('codevinci-llm-config-change'));
+    safeStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(this.config));
+    dispatchConfigChange();
   }
 
   updateCspOrigin(origin: string): void {
     this.config.cspOrigin = origin;
-    localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(this.config));
+    safeStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(this.config));
   }
 
   /** Returns the origin we should allow in CSP for the current endpoint */

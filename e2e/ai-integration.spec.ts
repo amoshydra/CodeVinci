@@ -161,9 +161,18 @@ test.describe('AI Integration', () => {
     await page.keyboard.press('Control+Enter');
     await page.waitForTimeout(4000);
 
-    // Reasoning text should appear dimmed/italic (has reasoning_content styling)
+    // Reasoning is collapsed by default, so the toggle must be present first
+    const reasoningToggle = page.getByRole('button', { name: /Show reasoning/ });
+    await expect(reasoningToggle).toBeVisible({ timeout: 5000 });
+
+    // Reasoning text is hidden until expanded
     const reasoning = page.getByText('The user wants a counter.');
+    await expect(reasoning).toBeHidden();
+
+    // Expanding reveals the reasoning text (dimmed/italic via reasoning_content)
+    await reasoningToggle.click();
     await expect(reasoning).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: /Hide reasoning/ })).toBeVisible();
 
     // Response content should also appear
     const response = page.getByText('Here is a simple counter:');
