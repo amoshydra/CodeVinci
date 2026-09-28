@@ -25,4 +25,6 @@ dist-ssr
 
 ## Panda
 styled-system
-styled-system-studiotest-results/
+styled-system-studio
+test-results/
+playwright-report/
