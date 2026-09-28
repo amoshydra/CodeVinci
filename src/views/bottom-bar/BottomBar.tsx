@@ -19,8 +19,14 @@ export const BottomBar = (({ logs, counts, onClear, ...props }: BottomBarProps) 
   return (
     <div
       {...withCn(props, css({
-        paddingX: 2,
         display: "grid",
+        // Insets are additive on top of the original 2-unit (0.5rem) paddingX,
+        // so a zero inset reproduces the previous layout exactly. The bottom
+        // inset is what keeps the input and button clear of the home indicator
+        // and Android gesture bar.
+        paddingLeft: 'calc(0.5rem + var(--safe-area-left, 0px))',
+        paddingRight: 'calc(0.5rem + var(--safe-area-right, 0px))',
+        paddingBottom: 'var(--safe-area-bottom, 0px)',
         gridTemplateAreas: `
           "logger logger"
           "input button"
