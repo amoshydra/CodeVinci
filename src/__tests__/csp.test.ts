@@ -49,6 +49,7 @@ describe('CSP injection', () => {
     expect(content).toContain('esm.sh');
     expect(content).toContain('cdn.jsdelivr.net');
     expect(content).toContain('unpkg.com');
+    expect(content).toContain('esm.unpkg.com');
     expect(content).toContain("'unsafe-inline'");
   });
 
