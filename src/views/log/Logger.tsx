@@ -144,6 +144,9 @@ const LogLineRow = styled("pre", {
       'console.error': {
         color: 'red.800'
       },
+      'csp.violation': {
+        color: 'red.800'
+      },
       'console.info': {
         color: 'blue.500'
       },

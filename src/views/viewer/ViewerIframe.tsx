@@ -72,9 +72,32 @@ function storageMock(persisted: Record<string, string>): string {
 </script>`;
 }
 
+const cspCaptureScript = `<script>
+(function(){
+  window.__codevinciCspQueue = [];
+  window.__codevinciCspNotify = null;
+  window.addEventListener('securitypolicyviolation', function(event) {
+    var violation = {
+      blockedURI: event.blockedURI || '',
+      effectiveDirective: event.effectiveDirective || '',
+      disposition: event.disposition || '',
+      sourceFile: event.sourceFile || '',
+      lineNumber: event.lineNumber || 0,
+      columnNumber: event.columnNumber || 0
+    };
+    if (window.__codevinciCspNotify) {
+      window.__codevinciCspNotify(violation);
+    } else {
+      window.__codevinciCspQueue.push(violation);
+    }
+  });
+})();
+</script>`;
+
 const getSrcDoc = (script: string) =>
   createEsbuilderHtmlTemplate("", `
     ${storageMock(getPersistedStorage())}
+    ${cspCaptureScript}
     <script type="module" src=${JSON.stringify(iframeScript)} data-origin=${location.origin}></script>
     <script type="module">${script}</script>
   `);

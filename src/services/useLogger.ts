@@ -13,7 +13,9 @@ export const useLogger = (code: string) => {
     }
     setLogs(l => [...l, frameMessage]);
     setCounts(c => {
-      const key = frameMessage.method.split(".")[1] || "other";
+      const key = frameMessage.method === "csp.violation"
+        ? "error"
+        : frameMessage.method.split(".")[1] || "other";
       return {
         ...c,
         [key]: c[key as keyof typeof c] + 1

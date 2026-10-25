@@ -22,6 +22,30 @@ function send(method: string, args: unknown[]) {
   window.parent.postMessage(message, origin);
 }
 
+type CspViolation = {
+  blockedURI: string;
+  effectiveDirective: string;
+  disposition: string;
+  sourceFile: string;
+  lineNumber: number;
+  columnNumber: number;
+};
+
+declare global {
+  interface Window {
+    __codevinciCspQueue?: CspViolation[];
+    __codevinciCspNotify?: ((violation: CspViolation) => void) | null;
+  }
+}
+
+const sendCspViolation = (violation: CspViolation) => {
+  send("csp.violation", [violation]);
+};
+
+window.__codevinciCspNotify = sendCspViolation;
+const queuedCspViolations = window.__codevinciCspQueue ?? [];
+queuedCspViolations.splice(0).forEach(sendCspViolation);
+
 Object.defineProperty(window, "console", {
   value: (
     new Proxy(console, {

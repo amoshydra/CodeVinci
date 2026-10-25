@@ -1,3 +1,4 @@
+import { deserialize } from "@ungap/structured-clone";
 import { HTMLAttributes, lazy, Suspense, useCallback, useEffect, useDeferredValue, useMemo, useState } from "react";
 import { css } from "../../../styled-system/css";
 import { ActionButton } from "../../components/ActionButton";
@@ -11,6 +12,8 @@ import { BottomBar } from "../bottom-bar/BottomBar";
 import { Editor } from "../editor/Editor";
 import { TopBar } from "../top-bar/TopBar";
 import { Viewer } from "../viewer/Viewer";
+import { CspErrorBanner } from "../viewer/CspErrorBanner";
+import type { CspViolation } from "../viewer/interface";
 import type { LlmStatus } from "../../services/llm";
 import { pushSnapshot, undo as historyUndo, redo as historyRedo } from "../../services/codeHistory";
 
@@ -29,7 +32,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
   const { logs, onFrameMessage, resetLog, counts } = useLogger(deferredCode);
   const errorContext = useMemo(() => {
     const errors = logs
-      .filter(l => l.method === 'console.error')
+      .filter(l => l.method === 'console.error' || l.method === 'csp.violation')
       .slice(-3);
     if (errors.length === 0) return '';
     return errors.map(e => {
@@ -53,6 +56,26 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
   const isAiChatMode = settings.mode === 'ai-chat';
   const previewCode = aiPendingCode ?? deferredCode;
   const showPendingLabel = !!aiPendingCode && !isAiChatMode;
+
+  const cspViolations = useMemo(
+    () => logs.filter(l => l.method === 'csp.violation'),
+    [logs],
+  );
+  const cspViolation = useMemo(() => {
+    const latest = cspViolations[cspViolations.length - 1];
+    if (!latest) return null;
+    try {
+      const [violation] = deserialize(latest.args) as [CspViolation];
+      return violation ?? null;
+    } catch {
+      return null;
+    }
+  }, [cspViolations]);
+  const [dismissedCspCount, setDismissedCspCount] = useState(0);
+
+  useEffect(() => {
+    setDismissedCspCount(0);
+  }, [previewCode]);
 
   const aiDotState = !aiConfigured ? 'hidden' :
     aiStatus === 'error' ? 'error' :
@@ -127,6 +150,12 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               esbuildOptions={settings}
               onFrameMessage={onFrameMessage}
             />
+            {cspViolation && dismissedCspCount !== cspViolations.length && (
+              <CspErrorBanner
+                violation={cspViolation}
+                onDismiss={() => setDismissedCspCount(cspViolations.length)}
+              />
+            )}
             {showPendingLabel && (
               <div className={css({
                 position: 'absolute',
