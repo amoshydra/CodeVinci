@@ -1,5 +1,5 @@
 import { deserialize } from "@ungap/structured-clone";
-import { HTMLAttributes, lazy, Suspense, useCallback, useEffect, useDeferredValue, useMemo, useState } from "react";
+import { HTMLAttributes, lazy, Suspense, useCallback, useEffect, useDeferredValue, useMemo, useRef, useState } from "react";
 import { css } from "../../../styled-system/css";
 import { ActionButton } from "../../components/ActionButton";
 import { EntryContentGrid, A as GridArea } from "../../components/EntryContentGrid";
@@ -13,9 +13,10 @@ import { Editor } from "../editor/Editor";
 import { TopBar } from "../top-bar/TopBar";
 import { Viewer } from "../viewer/Viewer";
 import { CspErrorBanner } from "../viewer/CspErrorBanner";
-import type { CspViolation } from "../viewer/interface";
+import type { CspViolation, FrameMessage } from "../viewer/interface";
 import type { LlmStatus } from "../../services/llm";
 import { pushSnapshot, undo as historyUndo, redo as historyRedo } from "../../services/codeHistory";
+import { registerWebMcpTools } from "../../services/webmcp";
 
 const LLMPanel = lazy(() => import("../llm/LLMPanel"));
 const LlmSettings = lazy(() => import("../llm/LlmSettings"));
@@ -108,6 +109,25 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
     const next = historyRedo(code);
     if (next !== null) onCodeChange(next);
   }, [code, onCodeChange]);
+
+  // Latest values for the WebMCP tool handlers, which are registered once.
+  const latestRef = useRef({ code, onCodeChange, logs });
+  useEffect(() => {
+    latestRef.current = { code, onCodeChange, logs };
+  });
+
+  useEffect(() => {
+    return registerWebMcpTools({
+      getCode: () => latestRef.current.code,
+      setCode: (next) => {
+        pushSnapshot(latestRef.current.code);
+        // Read-your-write: a later tool call in the same turn must see this value.
+        latestRef.current.code = next;
+        latestRef.current.onCodeChange(next);
+      },
+      getLogs: () => formatLogs(latestRef.current.logs.slice(-50)),
+    });
+  }, []);
 
   return (
     <div
@@ -274,3 +294,12 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
     </div>
   );
 };
+
+const formatLogs = (entries: FrameMessage[]): string =>
+  entries.map((entry) => {
+    try {
+      return `${entry.method}(${JSON.stringify(entry.args)})`;
+    } catch {
+      return entry.method;
+    }
+  }).join('\n');
