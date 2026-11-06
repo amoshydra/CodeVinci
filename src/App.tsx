@@ -1,4 +1,5 @@
 import "./App.css";
+import { useEffect, useRef } from "react";
 import { useSettings } from "./services/settings";
 import { useCodeStorage } from "./services/useCodeStorage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -7,11 +8,33 @@ import { Disclaimer } from "./views/disclaimer/Disclaimer";
 import { toggleComment } from "./views/disclaimer/toggleComment.util";
 import { useDisclaimer } from "./views/disclaimer/useDisclaimer";
 import { Entry } from "./views/entry/Entry";
+import { pushSnapshot } from "./services/codeHistory";
+import { registerWebMcpTools } from "./services/webmcp";
 
 function App() {
   const [code, setCode] = useCodeStorage(initialCode);
   const { isDisclaimerAccepted, acceptDisclaimer } = useDisclaimer();
   const { settings, updateSetting } = useSettings();
+
+  // Registered above the disclaimer gate so an agent always sees the tool
+  // surface; writes stay locked until the user accepts.
+  const latestRef = useRef({ code, setCode, isDisclaimerAccepted });
+  useEffect(() => {
+    latestRef.current = { code, setCode, isDisclaimerAccepted };
+  });
+
+  useEffect(() => {
+    return registerWebMcpTools({
+      getCode: () => latestRef.current.code,
+      setCode: (next) => {
+        pushSnapshot(latestRef.current.code);
+        // Read-your-write: a later tool call in the same turn must see this value.
+        latestRef.current.code = next;
+        latestRef.current.setCode(next);
+      },
+      isWriteEnabled: () => latestRef.current.isDisclaimerAccepted,
+    });
+  }, []);
 
   if (!isDisclaimerAccepted) {
     return (

@@ -39,8 +39,23 @@ declare global {
 export interface WebMcpBridge {
   getCode: () => string;
   setCode: (code: string) => void;
-  getLogs: () => string;
+  /** False until the user accepts the disclaimer. Write tools fail closed. */
+  isWriteEnabled: () => boolean;
 }
+
+const WRITE_LOCKED_MESSAGE =
+  'CodeVinci editing is locked: the user has not accepted the disclaimer in the page yet. ' +
+  'Ask the user to accept it, then retry. get_code and get_console keep working.';
+
+/**
+ * Latest preview console text, published by the log view. Kept outside React so
+ * tools stay callable before (and independently of) the editor mounting.
+ */
+let consoleText = '';
+
+export const setWebMcpConsole = (text: string): void => {
+  consoleText = text;
+};
 
 const getModelContext = (): WebMcpModelContext | undefined => {
   const fromDocument = document.modelContext;
@@ -50,8 +65,9 @@ const getModelContext = (): WebMcpModelContext | undefined => {
   return legacy;
 };
 
-export const isWebMcpAvailable = (): boolean =>
-  typeof getModelContext()?.registerTool === 'function';
+const requireWriteAccess = (bridge: WebMcpBridge): void => {
+  if (!bridge.isWriteEnabled()) throw new Error(WRITE_LOCKED_MESSAGE);
+};
 
 const readCode = (bridge: WebMcpBridge): WebMcpTool => ({
   name: 'get_code',
@@ -65,7 +81,7 @@ const readCode = (bridge: WebMcpBridge): WebMcpTool => ({
   execute: async () => ({ code: bridge.getCode() }),
 });
 
-const readConsole = (bridge: WebMcpBridge): WebMcpTool => ({
+const readConsole = (): WebMcpTool => ({
   name: 'get_console',
   description:
     'Read recent console output from the preview, including errors and warnings. Use it after changing code to check whether the preview still runs.',
@@ -75,7 +91,23 @@ const readConsole = (bridge: WebMcpBridge): WebMcpTool => ({
     additionalProperties: false,
   },
   annotations: { readOnlyHint: true, untrustedContentHint: true },
-  execute: async () => ({ output: bridge.getLogs() }),
+  execute: async () => ({ output: consoleText }),
+});
+
+const readStatus = (bridge: WebMcpBridge): WebMcpTool => ({
+  name: 'get_editor_status',
+  description:
+    'Check whether the editor accepts tool calls. Returns ready: false while the user has not accepted the disclaimer; set_code and apply_edits stay locked until they do.',
+  inputSchema: {
+    type: 'object',
+    properties: {},
+    additionalProperties: false,
+  },
+  annotations: { readOnlyHint: true },
+  execute: async () => ({
+    ready: bridge.isWriteEnabled(),
+    codeLength: bridge.getCode().length,
+  }),
 });
 
 const writeCode = (bridge: WebMcpBridge): WebMcpTool => ({
@@ -91,6 +123,7 @@ const writeCode = (bridge: WebMcpBridge): WebMcpTool => ({
   },
   annotations: { readOnlyHint: false, consequentialHint: false },
   execute: async (input) => {
+    requireWriteAccess(bridge);
     const code = input.code;
     if (typeof code !== 'string') {
       throw new Error('set_code: "code" must be a string.');
@@ -127,6 +160,7 @@ const editCode = (bridge: WebMcpBridge): WebMcpTool => ({
   },
   annotations: { readOnlyHint: false, consequentialHint: false },
   execute: async (input) => {
+    requireWriteAccess(bridge);
     const edits = parseEdits(input.edits);
     const { result, error } = applyEdits(bridge.getCode(), edits);
     if (error) {
@@ -155,9 +189,10 @@ const parseEdits = (value: unknown): TextEdit[] => {
 
 const buildTools = (bridge: WebMcpBridge): WebMcpTool[] => [
   readCode(bridge),
+  readStatus(bridge),
   writeCode(bridge),
   editCode(bridge),
-  readConsole(bridge),
+  readConsole(),
 ];
 
 /**
@@ -172,20 +207,30 @@ export function registerWebMcpTools(bridge: WebMcpBridge): () => void {
 
   const controller = new AbortController();
   const tools = buildTools(bridge);
+  let cancelled = false;
 
-  // Register as a batch: a partial tool surface is worse than none.
-  Promise.all(
-    tools.map((tool) => modelContext.registerTool(tool, { signal: controller.signal })),
-  )
-    .then(() => {
-      if (import.meta.env.DEV) {
-        console.info(`[webmcp] registered ${tools.length} site tools`);
-      }
-    })
-    .catch((error) => {
-      console.warn('[webmcp] registration failed, tools disabled', error);
-      controller.abort();
-    });
+  // Defer a microtask: React StrictMode mounts, cleans up and remounts within
+  // one pass, which would otherwise register, abort, then register again.
+  queueMicrotask(() => {
+    if (cancelled) return;
 
-  return () => controller.abort();
+    // Register as a batch: a partial tool surface is worse than none.
+    Promise.all(
+      tools.map((tool) => modelContext.registerTool(tool, { signal: controller.signal })),
+    )
+      .then(() => {
+        if (import.meta.env.DEV) {
+          console.info(`[webmcp] registered ${tools.length} site tools`);
+        }
+      })
+      .catch((error) => {
+        console.warn('[webmcp] registration failed, tools disabled', error);
+        controller.abort();
+      });
+  });
+
+  return () => {
+    cancelled = true;
+    controller.abort();
+  };
 }
