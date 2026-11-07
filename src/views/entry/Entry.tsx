@@ -1,5 +1,5 @@
 import { deserialize } from "@ungap/structured-clone";
-import { HTMLAttributes, lazy, Suspense, useCallback, useEffect, useDeferredValue, useMemo, useRef, useState } from "react";
+import { HTMLAttributes, lazy, Suspense, useCallback, useEffect, useDeferredValue, useMemo, useState } from "react";
 import { css } from "../../../styled-system/css";
 import { ActionButton } from "../../components/ActionButton";
 import { EntryContentGrid, A as GridArea } from "../../components/EntryContentGrid";
@@ -16,7 +16,7 @@ import { CspErrorBanner } from "../viewer/CspErrorBanner";
 import type { CspViolation, FrameMessage } from "../viewer/interface";
 import type { LlmStatus } from "../../services/llm";
 import { pushSnapshot, undo as historyUndo, redo as historyRedo } from "../../services/codeHistory";
-import { registerWebMcpTools } from "../../services/webmcp";
+import { beginRun, publishConsole, setRerunHandler } from "../../services/webmcpRuntime";
 
 const LLMPanel = lazy(() => import("../llm/LLMPanel"));
 const LlmSettings = lazy(() => import("../llm/LlmSettings"));
@@ -48,6 +48,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
   const [aiStatus, setAiStatus] = useState<LlmStatus>('idle');
   const [aiPendingCode, setAiPendingCode] = useState<string | null>(null);
   const [aiConfigured, setAiConfigured] = useState(false);
+  const [runNonce, setRunNonce] = useState(0);
 
   // Clear the reopen flag after reading it
   useEffect(() => {
@@ -110,24 +111,27 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
     if (next !== null) onCodeChange(next);
   }, [code, onCodeChange]);
 
-  // Latest values for the WebMCP tool handlers, which are registered once.
-  const latestRef = useRef({ code, onCodeChange, logs });
+  // Track preview runs for the WebMCP `get_console` / `get_preview` tools.
   useEffect(() => {
-    latestRef.current = { code, onCodeChange, logs };
-  });
+    beginRun();
+  }, [deferredCode]);
 
+  // `run_code` re-executes the preview and starts a clean log.
   useEffect(() => {
-    return registerWebMcpTools({
-      getCode: () => latestRef.current.code,
-      setCode: (next) => {
-        pushSnapshot(latestRef.current.code);
-        // Read-your-write: a later tool call in the same turn must see this value.
-        latestRef.current.code = next;
-        latestRef.current.onCodeChange(next);
-      },
-      getLogs: () => formatLogs(latestRef.current.logs.slice(-50)),
+    return setRerunHandler(() => {
+      resetLog();
+      setRunNonce((value) => value + 1);
     });
-  }, []);
+  }, [resetLog]);
+
+  // Publish preview output for the WebMCP `get_console` tool.
+  useEffect(() => {
+    publishConsole({
+      text: formatLogs(logs.slice(-50)),
+      totalLogs: logs.length,
+      shownLogs: Math.min(logs.length, 50),
+    });
+  }, [logs]);
 
   return (
     <div
@@ -169,6 +173,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               code={previewCode}
               esbuildOptions={settings}
               onFrameMessage={onFrameMessage}
+              runNonce={runNonce}
             />
             {cspViolation && dismissedCspCount !== cspViolations.length && (
               <CspErrorBanner
@@ -297,9 +302,22 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
 
 const formatLogs = (entries: FrameMessage[]): string =>
   entries.map((entry) => {
+    const level = entry.method.replace(/^console\./, '');
     try {
-      return `${entry.method}(${JSON.stringify(entry.args)})`;
+      const args = deserialize(entry.args) as unknown[];
+      return `[${level}] ${args.map(formatLogValue).join(' ')}`;
     } catch {
-      return entry.method;
+      return `[${level}] (unserializable arguments)`;
     }
   }).join('\n');
+
+const formatLogValue = (value: unknown): string => {
+  if (value instanceof Error) return `${value.name}: ${value.message}`;
+  if (typeof value === 'string') return value;
+  try {
+    const json = JSON.stringify(value);
+    return json === undefined ? String(value) : json;
+  } catch {
+    return String(value);
+  }
+};

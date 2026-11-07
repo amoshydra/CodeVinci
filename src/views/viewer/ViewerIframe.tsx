@@ -1,10 +1,27 @@
-import { HTMLAttributes, memo, useEffect } from "react";
+import { HTMLAttributes, memo, useEffect, useRef } from "react";
 import { createEsbuilderHtmlTemplate } from "../../utils/esbuilder.html";
 import { withCn } from "../../utils/tailwind";
+import {
+  markPreviewStarted,
+  setInteractionHandler,
+  setPreviewHandler,
+  type InteractionRequest,
+  type InteractionResult,
+  type PreviewRequestOptions,
+  type PreviewSnapshot,
+} from "../../services/webmcpRuntime";
 import { OnFrameMessage } from "./interface";
 import iframeScript from "./ViewerIframeScript?worker&url";
 
 const STORAGE_SESSION_KEY = 'codevinci-iframe-localStorage';
+
+interface PendingRequest {
+  resolve: (value: unknown) => void;
+  reject: (error: Error) => void;
+  timer: number;
+}
+
+let previewRequestCounter = 0;
 
 function getPersistedStorage(): Record<string, string> {
   try {
@@ -17,18 +34,90 @@ function getPersistedStorage(): Record<string, string> {
 export interface ViewerIframeProps extends HTMLAttributes<HTMLElement> {
   script: string;
   onFrameMessage: OnFrameMessage;
+  runNonce?: number;
 }
 
-export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIframeProps) => {
+export const ViewerIframe = memo(({
+  script,
+  onFrameMessage,
+  runNonce = 0,
+  ...props
+}: ViewerIframeProps) => {
   const srcDoc = getSrcDoc(script);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const pendingRequests = useRef(new Map<string, PendingRequest>());
+
+  useEffect(() => {
+    const pending = pendingRequests.current;
+
+    const sendRequest = (
+      method: string,
+      payload: unknown,
+      timeoutMs: number,
+    ): Promise<unknown> => new Promise((resolve, reject) => {
+      const frame = iframeRef.current?.contentWindow;
+      if (!frame) {
+        reject(new Error('The preview is not available yet.'));
+        return;
+      }
+
+      const id = `preview-${++previewRequestCounter}`;
+      const timer = window.setTimeout(() => {
+        pending.delete(id);
+        reject(new Error('Timed out waiting for the preview to respond.'));
+      }, timeoutMs);
+
+      pending.set(id, { resolve, reject, timer });
+      frame.postMessage({
+        _id: 'codevinci-request',
+        id,
+        method,
+        args: [payload],
+      }, '*');
+    });
+
+    const unregisterPreview = setPreviewHandler((options: PreviewRequestOptions) =>
+      sendRequest('preview.snapshot', options, 1000) as Promise<PreviewSnapshot>,
+    );
+    const unregisterInteraction = setInteractionHandler((request: InteractionRequest) =>
+      sendRequest('preview.interact', request, 1000) as Promise<InteractionResult>,
+    );
+
+    return () => {
+      unregisterPreview();
+      unregisterInteraction();
+      for (const request of pending.values()) {
+        window.clearTimeout(request.timer);
+        request.reject(new Error('The preview was unmounted.'));
+      }
+      pending.clear();
+    };
+  }, []);
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const data = event.data || {};
       if (event.origin === "null" && data._id === "codevinci") {
+        if (data.method === "preview.started") {
+          markPreviewStarted();
+          return;
+        }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { _id: _, ...rest } = data;
         onFrameMessage(rest);
+      }
+      if (event.origin === "null" && data._id === "codevinci-response") {
+        const request = pendingRequests.current.get(data.id);
+        if (!request) return;
+        window.clearTimeout(request.timer);
+        pendingRequests.current.delete(data.id);
+        if (data.ok) {
+          request.resolve(data.result);
+        } else {
+          request.reject(new Error(
+            typeof data.error === 'string' ? data.error : 'The preview request failed.',
+          ));
+        }
       }
       if (event.origin === "null" && data._id === "codevinci-storage-sync") {
         try {
@@ -45,6 +134,8 @@ export const ViewerIframe = memo(({ script, onFrameMessage, ...props }: ViewerIf
   return (
     <iframe
       {...withCn(props)}
+      key={runNonce}
+      ref={iframeRef}
       sandbox="allow-scripts"
       srcDoc={srcDoc}
     />

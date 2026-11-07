@@ -12,6 +12,10 @@ function codeContext(code: string, aroundIdx: number, radius = 40): string {
   return snippet.replace(/\n/g, '\\n');
 }
 
+function lineAt(code: string, index: number): number {
+  return code.slice(0, index).split('\n').length;
+}
+
 export function applyEdits(code: string, edits: TextEdit[]): { result: string; error?: string } {
   let working = code;
   for (let i = 0; i < edits.length; i++) {
@@ -26,7 +30,7 @@ export function applyEdits(code: string, edits: TextEdit[]): { result: string; e
       const searchStart = search.slice(0, 20);
       const closeIdx = working.indexOf(searchStart);
       const snippet = closeIdx !== -1
-        ? `Near: \`${codeContext(working, closeIdx)}\``
+        ? `Near (line ${lineAt(working, closeIdx)}): \`${codeContext(working, closeIdx)}\``
         : `Code starts with: \`${code.slice(0, 80).replace(/\n/g, '\\n')}...\``;
       return {
         result: code,
@@ -40,7 +44,7 @@ export function applyEdits(code: string, edits: TextEdit[]): { result: string; e
       const ctx2 = codeContext(working, lastIdx);
       return {
         result: code,
-        error: `Edit ${i + 1}: search text matches ${countOccurrences(working, search)} times.\nMatch 1: \`${ctx1}\`\nMatch 2: \`${ctx2}\`\n\nInclude more surrounding context to make the search unique.`,
+        error: `Edit ${i + 1}: search text matches ${countOccurrences(working, search)} times.\nMatch 1 (line ${lineAt(working, firstIdx)}): \`${ctx1}\`\nMatch 2 (line ${lineAt(working, lastIdx)}): \`${ctx2}\`\n\nInclude more surrounding context to make the search unique.`,
       };
     }
     
