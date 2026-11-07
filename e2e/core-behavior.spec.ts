@@ -94,7 +94,7 @@ test.describe('Core app behavior', () => {
       await page.waitForTimeout(500);
       await expect(page.locator('.cm-editor').first()).toBeVisible({ timeout: 3000 });
       // In edit mode, the iframe should not exist in the DOM
-      expect(page.locator('iframe')).toHaveCount(0);
+      await expect(page.locator('iframe')).toHaveCount(0);
     });
 
     test('switch to view, refresh, mode persists', async ({ page }) => {
