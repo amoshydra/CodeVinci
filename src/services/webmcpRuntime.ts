@@ -39,6 +39,7 @@ export type ConsoleSnapshotInput = Omit<ConsoleSnapshot, 'truncated'>;
 export interface PreviewRequestOptions {
   selector?: string;
   maxChars?: number;
+  includeStyles?: boolean;
 }
 
 export interface InteractiveElement {
@@ -55,6 +56,8 @@ export interface PreviewSnapshot {
   elementCount: number;
   hasCanvas: boolean;
   interactive: InteractiveElement[];
+  interactiveTruncated: boolean;
+  styles?: Record<string, string>;
 }
 
 export type InteractionAction = 'click' | 'fill' | 'press';

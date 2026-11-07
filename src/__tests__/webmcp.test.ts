@@ -97,6 +97,7 @@ const emptySnapshot = {
   elementCount: 0,
   hasCanvas: false,
   interactive: [],
+  interactiveTruncated: false,
 };
 
 const attachPreview = () => setPreviewHandler(async () => emptySnapshot);
@@ -217,6 +218,7 @@ describe('registerWebMcpTools', () => {
       output: '[log] driven from termux\n[error] boom',
       truncated: true,
       totalLogs: 60,
+      shownLogs: 50,
       waitedMs: 0,
     });
   });
@@ -426,17 +428,26 @@ describe('registerWebMcpTools', () => {
     registerWebMcpTools(createBridge('').bridge);
     await flush();
 
-    setPreviewHandler(async (options) => ({
-      title: 'Preview',
-      text: `sel:${options.selector ?? 'body'}`,
-      truncated: false,
-      isEmpty: false,
-      elementCount: 3,
-      hasCanvas: true,
-      interactive: [{ tag: 'button', text: 'Go', selector: '#go' }],
-    }));
+    let receivedIncludeStyles: boolean | undefined;
+    setPreviewHandler(async (options) => {
+      receivedIncludeStyles = options.includeStyles;
+      return {
+        title: 'Preview',
+        text: `sel:${options.selector ?? 'body'}`,
+        truncated: false,
+        isEmpty: false,
+        elementCount: 3,
+        hasCanvas: true,
+        interactive: [{ tag: 'button', text: 'Go', selector: '#go' }],
+        interactiveTruncated: false,
+        ...(options.includeStyles ? { styles: { color: 'rgb(1, 2, 3)' } } : {}),
+      };
+    });
 
-    await expect(executeTool(modelContext, 'get_preview', { selector: '#app' })).resolves.toMatchObject({
+    await expect(executeTool(modelContext, 'get_preview', {
+      selector: '#app',
+      includeStyles: true,
+    })).resolves.toMatchObject({
       ok: true,
       status: 'idle',
       title: 'Preview',
@@ -446,7 +457,10 @@ describe('registerWebMcpTools', () => {
       elementCount: 3,
       hasCanvas: true,
       interactive: [{ tag: 'button', text: 'Go', selector: '#go' }],
+      interactiveTruncated: false,
+      styles: { color: 'rgb(1, 2, 3)' },
     });
+    expect(receivedIncludeStyles).toBe(true);
   });
 
   it('fails get_preview with a mode-aware message when the preview is missing', async () => {

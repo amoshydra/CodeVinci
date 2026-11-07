@@ -114,6 +114,8 @@ interface PreviewSnapshot {
   elementCount: number;
   hasCanvas: boolean;
   interactive: InteractiveElement[];
+  interactiveTruncated: boolean;
+  styles?: Record<string, string>;
 }
 
 const DEFAULT_PREVIEW_CHARS = 20_000;
@@ -160,6 +162,7 @@ const snapshotPreview = (options: unknown): PreviewSnapshot => {
   const opts = (options && typeof options === 'object' ? options : {}) as {
     selector?: unknown;
     maxChars?: unknown;
+    includeStyles?: unknown;
   };
   const selector = typeof opts.selector === 'string' && opts.selector.trim()
     ? opts.selector
@@ -176,13 +179,32 @@ const snapshotPreview = (options: unknown): PreviewSnapshot => {
   const text = target instanceof HTMLElement
     ? target.innerText
     : (target.textContent ?? '');
-  const interactive = Array.from(document.querySelectorAll(INTERACTIVE_SELECTOR))
+  const allInteractive = Array.from(document.querySelectorAll(INTERACTIVE_SELECTOR));
+  const interactive = allInteractive
     .slice(0, MAX_INTERACTIVE)
     .map((element) => ({
       tag: element.tagName.toLowerCase(),
       text: elementLabel(element),
       selector: selectorFor(element),
     }));
+
+  const styles = opts.includeStyles === true && target instanceof HTMLElement
+    ? (() => {
+      const computed = getComputedStyle(target);
+      const values: Record<string, string> = {
+        display: computed.display,
+        color: computed.color,
+        backgroundColor: computed.backgroundColor,
+        fontSize: computed.fontSize,
+        fontFamily: computed.fontFamily,
+        textAlign: computed.textAlign,
+      };
+      if (computed.backgroundImage !== 'none') {
+        values.backgroundImage = computed.backgroundImage.slice(0, 300);
+      }
+      return values;
+    })()
+    : undefined;
 
   return {
     title: document.title,
@@ -192,6 +214,8 @@ const snapshotPreview = (options: unknown): PreviewSnapshot => {
     elementCount: document.body.querySelectorAll('*').length,
     hasCanvas: document.querySelector('canvas') !== null,
     interactive,
+    interactiveTruncated: allInteractive.length > MAX_INTERACTIVE,
+    ...(styles ? { styles } : {}),
   };
 };
 

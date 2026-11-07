@@ -115,6 +115,7 @@ test('agent explores, edits, runs, and verifies through the WebMCP tool surface'
   expect(String(consoleResult.output)).toContain('E2E-RUN');
   expect(consoleResult.truncated).toBe(false);
   expect(Number(consoleResult.totalLogs)).toBeGreaterThan(0);
+  expect(Number(consoleResult.shownLogs)).toBe(Number(consoleResult.totalLogs));
 
   const preview = await callTool(page, 'get_preview');
   expect(preview).toMatchObject({
@@ -125,8 +126,18 @@ test('agent explores, edits, runs, and verifies through the WebMCP tool surface'
   });
   expect(Number(preview.elementCount)).toBeGreaterThan(0);
   expect(String(preview.text)).toContain('E2E PREVIEW');
+  expect(preview.interactiveTruncated).toBe(false);
   expect(JSON.stringify(preview.interactive)).toContain('#go');
   expect(JSON.stringify(preview.interactive)).toContain('#name');
+
+  const styled = await callTool(page, 'get_preview', {
+    selector: '#app',
+    includeStyles: true,
+  });
+  expect(styled.ok).toBe(true);
+  const styles = styled.styles as Record<string, string> | undefined;
+  expect(styles).toBeTruthy();
+  expect(String(styles?.display)).not.toBe('');
 
   const click = await callTool(page, 'interact', { action: 'click', selector: '#go' });
   expect(click).toMatchObject({ ok: true, action: 'click', tag: 'button', selector: '#go' });
