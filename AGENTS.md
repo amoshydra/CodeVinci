@@ -11,7 +11,7 @@ pnpm preview          # Preview production build locally
 pnpm panda codegen    # Generate PandaCSS styles (runs automatically on prepare)
 ```
 
-Note: No test framework is currently configured in this project.
+Note: Vitest (unit) and Playwright (e2e) are configured. Run `pnpm test` and `pnpm test:e2e`.
 
 ## Project Overview
 
@@ -141,7 +141,7 @@ pnpm lint    # ESLint for code quality
 pnpm build   # TypeScript compiler for type checking
 ```
 
-No test framework configured - manual testing required.
+`pnpm lint`, `pnpm build`, `pnpm test`, and `pnpm test:e2e` should pass before committing.
 
 ### Environment
 

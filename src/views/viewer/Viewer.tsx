@@ -3,6 +3,7 @@ import { HTMLAttributes, memo, useEffect } from "react";
 import { css } from "../../../styled-system/css";
 import { useBuilder, type UseBuilderEsbuildOptions } from "../../services/builder";
 import { useEsbuild } from "../../services/esbuild";
+import { markPreviewFailed } from "../../services/webmcpRuntime";
 import { withCn } from "../../utils/tailwind";
 import { ViewerIframe } from "./ViewerIframe";
 import { OnFrameMessage } from "./interface";
@@ -11,10 +12,23 @@ export interface ViewerProps extends HTMLAttributes<HTMLElement> {
   code: string;
   esbuildOptions: UseBuilderEsbuildOptions,
   onFrameMessage: OnFrameMessage;
+  runNonce?: number;
 }
 
-export const Viewer = memo(({ code, esbuildOptions, onFrameMessage, ...props }: ViewerProps) => {
+export const Viewer = memo(({
+  code,
+  esbuildOptions,
+  onFrameMessage,
+  runNonce = 0,
+  ...props
+}: ViewerProps) => {
   const [, isLoading, error] = useEsbuild();
+
+  useEffect(() => {
+    if (error) {
+      markPreviewFailed(error.message);
+    }
+  }, [error]);
 
   if (error) {
     return <ViewerErrorView title="Unable to load builder (esbuild-wasm)" error={error} {...props} />;
@@ -23,14 +37,29 @@ export const Viewer = memo(({ code, esbuildOptions, onFrameMessage, ...props }: 
     return <ViewerLoadingView {...props} />
   }
 
-  return <ViewerBuilder code={code} esbuildOptions={esbuildOptions} onFrameMessage={onFrameMessage} {...props} />
+  return (
+    <ViewerBuilder
+      code={code}
+      esbuildOptions={esbuildOptions}
+      onFrameMessage={onFrameMessage}
+      runNonce={runNonce}
+      {...props}
+    />
+  )
 });
 
-const ViewerBuilder = memo(({ code, esbuildOptions, onFrameMessage, ...props }: ViewerProps) => {
+const ViewerBuilder = memo(({
+  code,
+  esbuildOptions,
+  onFrameMessage,
+  runNonce = 0,
+  ...props
+}: ViewerProps) => {
   const [error, , result] = useBuilder(code, esbuildOptions);
 
   useEffect(() => {
     if (error) {
+      markPreviewFailed(error.message);
       onFrameMessage({
         method: "build.error",
         args: serialize([error]),
@@ -53,6 +82,7 @@ const ViewerBuilder = memo(({ code, esbuildOptions, onFrameMessage, ...props }: 
           color: 'light-dark(#1c1917, white)',
         })}
         onFrameMessage={onFrameMessage}
+        runNonce={runNonce}
         script={result}
       />
     </div>

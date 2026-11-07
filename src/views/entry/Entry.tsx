@@ -16,7 +16,7 @@ import { CspErrorBanner } from "../viewer/CspErrorBanner";
 import type { CspViolation, FrameMessage } from "../viewer/interface";
 import type { LlmStatus } from "../../services/llm";
 import { pushSnapshot, undo as historyUndo, redo as historyRedo } from "../../services/codeHistory";
-import { setWebMcpConsole } from "../../services/webmcp";
+import { beginRun, publishConsole, setRerunHandler } from "../../services/webmcpRuntime";
 
 const LLMPanel = lazy(() => import("../llm/LLMPanel"));
 const LlmSettings = lazy(() => import("../llm/LlmSettings"));
@@ -48,6 +48,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
   const [aiStatus, setAiStatus] = useState<LlmStatus>('idle');
   const [aiPendingCode, setAiPendingCode] = useState<string | null>(null);
   const [aiConfigured, setAiConfigured] = useState(false);
+  const [runNonce, setRunNonce] = useState(0);
 
   // Clear the reopen flag after reading it
   useEffect(() => {
@@ -110,9 +111,26 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
     if (next !== null) onCodeChange(next);
   }, [code, onCodeChange]);
 
+  // Track preview runs for the WebMCP `get_console` / `get_preview` tools.
+  useEffect(() => {
+    beginRun();
+  }, [deferredCode]);
+
+  // `run_code` re-executes the preview and starts a clean log.
+  useEffect(() => {
+    return setRerunHandler(() => {
+      resetLog();
+      setRunNonce((value) => value + 1);
+    });
+  }, [resetLog]);
+
   // Publish preview output for the WebMCP `get_console` tool.
   useEffect(() => {
-    setWebMcpConsole(formatLogs(logs.slice(-50)));
+    publishConsole({
+      text: formatLogs(logs.slice(-50)),
+      totalLogs: logs.length,
+      shownLogs: Math.min(logs.length, 50),
+    });
   }, [logs]);
 
   return (
@@ -155,6 +173,7 @@ export const Entry = ({ code, onCodeChange, settings, onSettingUpdate, ...props 
               code={previewCode}
               esbuildOptions={settings}
               onFrameMessage={onFrameMessage}
+              runNonce={runNonce}
             />
             {cspViolation && dismissedCspCount !== cspViolations.length && (
               <CspErrorBanner

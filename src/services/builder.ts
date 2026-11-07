@@ -27,8 +27,15 @@ export const useBuilder = (code: string, options: UseBuilderEsbuildOptions) => {
         const errors: Error[] = [];
 
         if (transformedPromiseResult.status === "fulfilled") {
-          results.push(transformedPromiseResult.value.code);
-          buildWarnings.push(...transformedPromiseResult.value.warnings);
+          const output = transformedPromiseResult.value;
+          const outputErrors = (output as { errors?: Message[] }).errors ?? [];
+          if (outputErrors.length > 0) {
+            errors.push(new Error(outputErrors.map((error) => error.text).join('\n')));
+            buildErrors.push(...outputErrors);
+          } else {
+            results.push(output.code);
+            buildWarnings.push(...output.warnings);
+          }
         } else {
           errors.push(transformedPromiseResult.reason);
         }

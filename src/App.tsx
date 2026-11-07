@@ -8,7 +8,7 @@ import { Disclaimer } from "./views/disclaimer/Disclaimer";
 import { toggleComment } from "./views/disclaimer/toggleComment.util";
 import { useDisclaimer } from "./views/disclaimer/useDisclaimer";
 import { Entry } from "./views/entry/Entry";
-import { pushSnapshot } from "./services/codeHistory";
+import { pushSnapshot, undo as historyUndo } from "./services/codeHistory";
 import { registerWebMcpTools } from "./services/webmcp";
 
 function App() {
@@ -16,11 +16,21 @@ function App() {
   const { isDisclaimerAccepted, acceptDisclaimer } = useDisclaimer();
   const { settings, updateSetting } = useSettings();
 
+  // Monotonic code version for optimistic-concurrency checks in WebMCP tools.
+  const versionRef = useRef(0);
+  const lastCodeRef = useRef(code);
+  useEffect(() => {
+    if (lastCodeRef.current !== code) {
+      lastCodeRef.current = code;
+      versionRef.current += 1;
+    }
+  }, [code]);
+
   // Registered above the disclaimer gate so an agent always sees the tool
   // surface; writes stay locked until the user accepts.
-  const latestRef = useRef({ code, setCode, isDisclaimerAccepted });
+  const latestRef = useRef({ code, setCode, isDisclaimerAccepted, mode: settings.mode });
   useEffect(() => {
-    latestRef.current = { code, setCode, isDisclaimerAccepted };
+    latestRef.current = { code, setCode, isDisclaimerAccepted, mode: settings.mode };
   });
 
   useEffect(() => {
@@ -30,9 +40,23 @@ function App() {
         pushSnapshot(latestRef.current.code);
         // Read-your-write: a later tool call in the same turn must see this value.
         latestRef.current.code = next;
+        lastCodeRef.current = next;
+        versionRef.current += 1;
         latestRef.current.setCode(next);
+        return versionRef.current;
       },
       isWriteEnabled: () => latestRef.current.isDisclaimerAccepted,
+      getMode: () => latestRef.current.mode,
+      getVersion: () => versionRef.current,
+      undo: () => {
+        const previous = historyUndo(latestRef.current.code);
+        if (previous === null) return null;
+        latestRef.current.code = previous;
+        lastCodeRef.current = previous;
+        versionRef.current += 1;
+        latestRef.current.setCode(previous);
+        return { code: previous, version: versionRef.current };
+      },
     });
   }, []);
 
