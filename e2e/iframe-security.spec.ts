@@ -200,6 +200,7 @@ test.describe('App-level iframe and LLM security', () => {
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("base-uri 'self'");
     expect(csp).toContain("form-action 'none'");
+    expect(csp).toContain("worker-src 'self' blob:");
     expect(csp).not.toContain("'unsafe-eval'");
   });
 });

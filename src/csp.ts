@@ -28,7 +28,9 @@ function applyCSP(aiEndpoint: string): void {
     : selfOnly;
 
   const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const workerSrc = isDev ? `${selfOnly} blob:` : selfOnly;
+  // esbuild-wasm runs its WASM service in a worker created from a blob: URL.
+  // This is required in every environment, not just local development.
+  const workerSrc = `${selfOnly} blob:`;
   const devConnect = isDev ? ` ws: wss:` : '';
 
   const policy = [

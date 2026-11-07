@@ -53,10 +53,10 @@ describe('CSP injection', () => {
     expect(content).toContain("'unsafe-inline'");
   });
 
-  it('includes worker-src with blob: in dev mode (localhost)', () => {
+  it('includes worker-src with blob: (required by esbuild-wasm workers)', () => {
     initCSP();
     const content = document.querySelector('meta[http-equiv="Content-Security-Policy"]')!.getAttribute('content') || '';
-    // In test environment, hostname is localhost, so blob: should be in worker-src
+    // esbuild-wasm spawns its worker from a blob: URL, so blob: must always be allowed.
     expect(content).toContain("worker-src 'self' blob:");
   });
 
