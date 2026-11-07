@@ -46,6 +46,7 @@ export interface InteractiveElement {
   tag: string;
   text: string;
   selector: string;
+  disabled: boolean;
 }
 
 export interface PreviewSnapshot {
@@ -57,6 +58,8 @@ export interface PreviewSnapshot {
   hasCanvas: boolean;
   interactive: InteractiveElement[];
   interactiveTruncated: boolean;
+  hiddenInteractiveCount: number;
+  targetVisible: boolean;
   styles?: Record<string, string>;
 }
 
@@ -75,6 +78,8 @@ export interface InteractionResult {
   tag: string;
   text: string;
   value?: string;
+  key?: string;
+  code?: string;
 }
 
 const DEFAULT_QUIET_MS = 150;

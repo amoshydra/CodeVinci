@@ -40,18 +40,20 @@ CodeVinci exposes the editor to browser agents through [WebMCP](https://webmachi
 | `get_editor_status` | read | start here: `about`, `guide`, `consent`, `nextAction`, `mode`, `preview` (`available` / `state` / `lastError`), `codeLength`, `codeVersion` |
 | `get_code` | read | the code currently in the editor, plus `version` |
 | `get_console` | read | recent preview console output, one `[level] message` per line; `truncated`, `totalLogs`, `shownLogs`, `waitedMs`; accepts `waitMs` |
-| `get_preview` | read | rendered text, `isEmpty`, `hasCanvas`, `elementCount`, interactive selectors, `interactiveTruncated`, and optional computed `styles`; accepts `selector`, `maxChars`, `waitMs`, `includeStyles` |
+| `get_preview` | read | rendered text, `targetVisible`, `isEmpty`, `hasCanvas`, `elementCount`, visible interactive selectors with `disabled` flags, `interactiveTruncated`, `hiddenInteractiveCount`, and optional computed `styles`; accepts `selector`, `maxChars`, `waitMs`, `includeStyles` |
 | `set_code` | write | replaces the file, pushes an undo snapshot, runs the preview; accepts `expectedVersion` |
 | `apply_edits` | write | exact-text search/replace, using the same validation as the AI panel; accepts `expectedVersion` |
 | `run_code` | write | re-executes the current code without changing the editor |
 | `undo` | write | restores the last tool or AI edit snapshot |
-| `interact` | write | `click`, `fill`, or `press` an element in the preview; use `get_preview` to discover selectors |
+| `interact` | write | `click`, `fill`, or `press` a visible, enabled element in the preview; `press` sets both `key` and `code`; use `get_preview` to discover selectors |
 
 **Tool results.** Every tool returns `{ ok: true, ... }` on success or `{ ok: false, error: { code, message, retryable?, nextAction? } }` on failure. The WebMCP transport may deliver the result as a JSON string; parse it. Codes are `consent_required`, `invalid_input`, `edit_failed`, `stale_code`, `not_ready`, `timeout`, `preview_unavailable`, `interaction_failed`, and `nothing_to_undo`. Check `ok` before treating a call as successful; a failed edit still returns the descriptive search/ambiguity text, with line numbers, so the agent can self-correct.
 
 **Editing loop.** `get_console` and `get_preview` wait up to 2s automatically while a run is building or still fresh, so a read immediately after `set_code` or `apply_edits` sees the new output. Pass `waitMs` (for example `3000`) to override that budget. A failed build resolves immediately with `status: "failed"` and the error in `get_console`. `run_code` forces a re-run, and `undo` restores the previous snapshot.
 
-**Verifying visuals.** `get_preview` returns text and DOM facts, not pixels. Pass `includeStyles: true` with a `selector` to get a small computed-style snapshot (display, color, background, font) for layout or theme checks. Interactive elements come with ready-to-use selectors for `interact`; `interactiveTruncated` says whether the 20-element inventory was cut off.
+**Verifying visuals.** `get_preview` returns text and DOM facts, not pixels. Pass `includeStyles: true` with a `selector` to get a small computed-style snapshot (display, visibility, color, background, font, opacity, boxShadow) for layout or theme checks. Interactive elements come with ready-to-use selectors for `interact`; `interactiveTruncated` says whether the 20-element inventory was cut off, and `hiddenInteractiveCount` counts controls that were filtered out because they are not visible.
+
+**Interactions.** `interact` rejects elements that are hidden or disabled with a descriptive error, so a stale selector cannot silently do nothing. `fill` updates the value through the native setter and dispatches `input`/`change`, which works with framework-controlled inputs. `press` normalizes "Space", "Enter", letters, digits, and named keys into the `key`/`code` pair a real keyboard event carries.
 
 **Versions and concurrency.** `get_code` and `get_editor_status` return a `codeVersion`. Pass `expectedVersion` to `set_code` or `apply_edits`; if the code changed underneath the agent, the call fails with `stale_code` and returns the current code and version, so a human edit is never silently clobbered.
 

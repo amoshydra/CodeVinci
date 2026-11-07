@@ -98,6 +98,8 @@ const emptySnapshot = {
   hasCanvas: false,
   interactive: [],
   interactiveTruncated: false,
+  hiddenInteractiveCount: 0,
+  targetVisible: true,
 };
 
 const attachPreview = () => setPreviewHandler(async () => emptySnapshot);
@@ -438,8 +440,10 @@ describe('registerWebMcpTools', () => {
         isEmpty: false,
         elementCount: 3,
         hasCanvas: true,
-        interactive: [{ tag: 'button', text: 'Go', selector: '#go' }],
+        interactive: [{ tag: 'button', text: 'Go', selector: '#go', disabled: false }],
         interactiveTruncated: false,
+        hiddenInteractiveCount: 0,
+        targetVisible: true,
         ...(options.includeStyles ? { styles: { color: 'rgb(1, 2, 3)' } } : {}),
       };
     });
@@ -456,8 +460,10 @@ describe('registerWebMcpTools', () => {
       isEmpty: false,
       elementCount: 3,
       hasCanvas: true,
-      interactive: [{ tag: 'button', text: 'Go', selector: '#go' }],
+      interactive: [{ tag: 'button', text: 'Go', selector: '#go', disabled: false }],
       interactiveTruncated: false,
+      hiddenInteractiveCount: 0,
+      targetVisible: true,
       styles: { color: 'rgb(1, 2, 3)' },
     });
     expect(receivedIncludeStyles).toBe(true);
@@ -483,7 +489,7 @@ describe('registerWebMcpTools', () => {
     const rerun = vi.fn();
     setRerunHandler(rerun);
 
-    await expect(executeTool(modelContext, 'run_code')).resolves.toEqual({ ok: true });
+    await expect(executeTool(modelContext, 'run_code')).resolves.toMatchObject({ ok: true, version: expect.any(Number) });
     expect(rerun).toHaveBeenCalledTimes(1);
   });
 

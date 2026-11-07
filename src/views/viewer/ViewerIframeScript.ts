@@ -1,5 +1,6 @@
 import { serialize } from '@ungap/structured-clone';
 import { onErrorFunctionName } from './common';
+import { normalizeKey } from './keyboard';
 
 
 const origin = (() => {
@@ -104,6 +105,7 @@ interface InteractiveElement {
   tag: string;
   text: string;
   selector: string;
+  disabled: boolean;
 }
 
 interface PreviewSnapshot {
@@ -115,6 +117,8 @@ interface PreviewSnapshot {
   hasCanvas: boolean;
   interactive: InteractiveElement[];
   interactiveTruncated: boolean;
+  hiddenInteractiveCount: number;
+  targetVisible: boolean;
   styles?: Record<string, string>;
 }
 
@@ -158,6 +162,29 @@ const elementLabel = (element: Element): string => {
   return label.trim().slice(0, 80);
 };
 
+const isElementVisible = (element: Element): boolean => {
+  if (!(element instanceof HTMLElement)) return false;
+  const checkVisibility = (element as HTMLElement & {
+    checkVisibility?: (options?: {
+      checkOpacity?: boolean;
+      checkVisibilityCSS?: boolean;
+    }) => boolean;
+  }).checkVisibility;
+  if (typeof checkVisibility === 'function') {
+    return checkVisibility.call(element, {
+      checkOpacity: true,
+      checkVisibilityCSS: true,
+    });
+  }
+  return element.getClientRects().length > 0
+    && getComputedStyle(element).visibility !== 'hidden';
+};
+
+const isElementDisabled = (element: Element): boolean => {
+  const control = element as HTMLButtonElement & { disabled?: boolean };
+  return control.disabled === true || element.getAttribute('aria-disabled') === 'true';
+};
+
 const snapshotPreview = (options: unknown): PreviewSnapshot => {
   const opts = (options && typeof options === 'object' ? options : {}) as {
     selector?: unknown;
@@ -180,12 +207,14 @@ const snapshotPreview = (options: unknown): PreviewSnapshot => {
     ? target.innerText
     : (target.textContent ?? '');
   const allInteractive = Array.from(document.querySelectorAll(INTERACTIVE_SELECTOR));
-  const interactive = allInteractive
+  const visibleInteractive = allInteractive.filter(isElementVisible);
+  const interactive = visibleInteractive
     .slice(0, MAX_INTERACTIVE)
     .map((element) => ({
       tag: element.tagName.toLowerCase(),
       text: elementLabel(element),
       selector: selectorFor(element),
+      disabled: isElementDisabled(element),
     }));
 
   const styles = opts.includeStyles === true && target instanceof HTMLElement
@@ -198,7 +227,12 @@ const snapshotPreview = (options: unknown): PreviewSnapshot => {
         fontSize: computed.fontSize,
         fontFamily: computed.fontFamily,
         textAlign: computed.textAlign,
+        opacity: computed.opacity,
+        visibility: computed.visibility,
       };
+      if (computed.boxShadow !== 'none') {
+        values.boxShadow = computed.boxShadow.slice(0, 200);
+      }
       if (computed.backgroundImage !== 'none') {
         values.backgroundImage = computed.backgroundImage.slice(0, 300);
       }
@@ -214,7 +248,9 @@ const snapshotPreview = (options: unknown): PreviewSnapshot => {
     elementCount: document.body.querySelectorAll('*').length,
     hasCanvas: document.querySelector('canvas') !== null,
     interactive,
-    interactiveTruncated: allInteractive.length > MAX_INTERACTIVE,
+    interactiveTruncated: visibleInteractive.length > MAX_INTERACTIVE,
+    hiddenInteractiveCount: allInteractive.length - visibleInteractive.length,
+    targetVisible: isElementVisible(target),
     ...(styles ? { styles } : {}),
   };
 };
@@ -225,6 +261,8 @@ interface InteractionResult {
   tag: string;
   text: string;
   value?: string;
+  key?: string;
+  code?: string;
 }
 
 const interactPreview = (options: unknown): InteractionResult => {
@@ -250,6 +288,14 @@ const interactPreview = (options: unknown): InteractionResult => {
   if (!(target instanceof HTMLElement)) {
     throw new Error(`Element is not interactive: ${selector}`);
   }
+  if (!isElementVisible(target)) {
+    throw new Error(
+      `Element is not visible: ${selector}. Use get_preview to list visible interactive elements.`,
+    );
+  }
+  if (isElementDisabled(target)) {
+    throw new Error(`Element is disabled: ${selector}`);
+  }
 
   if (action === 'click') {
     target.click();
@@ -260,16 +306,40 @@ const interactPreview = (options: unknown): InteractionResult => {
       throw new Error(`Element cannot be filled: ${selector}`);
     }
     const value = typeof opts.value === 'string' ? opts.value : '';
-    target.value = value;
+    // Use the native setter so React-style controlled inputs observe the change.
+    const setter = Object.getOwnPropertyDescriptor(
+      Object.getPrototypeOf(target),
+      'value',
+    )?.set;
+    if (setter) {
+      setter.call(target, value);
+    } else {
+      target.value = value;
+    }
     target.dispatchEvent(new Event('input', { bubbles: true }));
     target.dispatchEvent(new Event('change', { bubbles: true }));
   } else {
-    const key = typeof opts.key === 'string' && opts.key ? opts.key : 'Enter';
+    const normalized = normalizeKey(
+      typeof opts.key === 'string' && opts.key ? opts.key : 'Enter',
+    );
     target.focus();
-    const init = { key, bubbles: true, cancelable: true };
+    const init = {
+      key: normalized.key,
+      code: normalized.code,
+      bubbles: true,
+      cancelable: true,
+    };
     target.dispatchEvent(new KeyboardEvent('keydown', init));
     target.dispatchEvent(new KeyboardEvent('keypress', init));
     target.dispatchEvent(new KeyboardEvent('keyup', init));
+    return {
+      action,
+      selector,
+      tag: target.tagName.toLowerCase(),
+      text: elementLabel(target),
+      key: normalized.key,
+      code: normalized.code,
+    };
   }
 
   return {

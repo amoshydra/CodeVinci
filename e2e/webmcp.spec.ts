@@ -101,9 +101,10 @@ test('agent explores, edits, runs, and verifies through the WebMCP tool surface'
 
   const code = [
     'console.log("E2E-RUN");',
-    'document.body.innerHTML = \'<h1 id="app">E2E PREVIEW</h1><button id="go">Go</button><input id="name">\';',
+    'document.body.innerHTML = \'<h1 id="app">E2E PREVIEW</h1><button id="go">Go</button><input id="name"><button id="hidden" style="display:none">Hidden</button>\';',
     'document.getElementById("go").onclick = () => console.log("CLICKED");',
     'document.getElementById("name").oninput = (event) => console.log("INPUT", event.target.value);',
+    'document.addEventListener("keydown", (event) => { if (event.code === "Space") console.log("SPACE-CODE-OK"); });',
   ].join('\n');
   const written = await callTool(page, 'set_code', { code });
   expect(written).toMatchObject({ ok: true, replaced: true, length: code.length });
@@ -127,8 +128,11 @@ test('agent explores, edits, runs, and verifies through the WebMCP tool surface'
   expect(Number(preview.elementCount)).toBeGreaterThan(0);
   expect(String(preview.text)).toContain('E2E PREVIEW');
   expect(preview.interactiveTruncated).toBe(false);
+  expect(preview.targetVisible).toBe(true);
+  expect(Number(preview.hiddenInteractiveCount)).toBeGreaterThanOrEqual(1);
   expect(JSON.stringify(preview.interactive)).toContain('#go');
   expect(JSON.stringify(preview.interactive)).toContain('#name');
+  expect(JSON.stringify(preview.interactive)).not.toContain('#hidden');
 
   const styled = await callTool(page, 'get_preview', {
     selector: '#app',
@@ -138,6 +142,23 @@ test('agent explores, edits, runs, and verifies through the WebMCP tool surface'
   const styles = styled.styles as Record<string, string> | undefined;
   expect(styles).toBeTruthy();
   expect(String(styles?.display)).not.toBe('');
+  expect(String(styles?.visibility)).toBe('visible');
+
+  const hidden = await callTool(page, 'interact', {
+    action: 'click',
+    selector: '#hidden',
+  });
+  expect(hidden.ok).toBe(false);
+  expect(String(hidden.error?.message)).toContain('not visible');
+
+  const pressed = await callTool(page, 'interact', {
+    action: 'press',
+    selector: '#go',
+    key: 'Space',
+  });
+  expect(pressed).toMatchObject({ ok: true, key: ' ', code: 'Space' });
+  await expect.poll(async () => String((await callTool(page, 'get_console')).output))
+    .toContain('SPACE-CODE-OK');
 
   const click = await callTool(page, 'interact', { action: 'click', selector: '#go' });
   expect(click).toMatchObject({ ok: true, action: 'click', tag: 'button', selector: '#go' });
